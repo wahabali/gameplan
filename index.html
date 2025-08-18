@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Complete Life Story Tool - 2D Mountain</title>
+    <!-- Prevent Safari from loading default favicon.ico -->
+    <link rel="icon" href="data:,">
+    <!-- Multiple favicon formats to prevent Safari from loading default favicon.ico -->
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
+    <link rel="shortcut icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==">
     <style>
         body {
             margin: 0;
@@ -721,16 +727,11 @@
             get currentLevel() { return this.levels[this.current]; }
         };
         
-        // FIXED: Using proper emoji codes that work locally
+        // Premium life achievement symbols - curated selection
         const lifeTypes = [
-            { emoji: '🌴', name: 'Palm Tree' },
-            { emoji: '🏎️', name: 'Luxury Car' },
-            { emoji: '👸', name: 'Queen' },
-            { emoji: '🚗', name: 'Sports Car' },
-            { emoji: '💃', name: 'Dancer' },
-            { emoji: '🏖️', name: 'Beach' },
             { emoji: '💎', name: 'Diamond' },
-            { emoji: '🎯', name: 'Target' }
+            { emoji: '🌴', name: 'Palm Tree' },
+            { emoji: '👸', name: 'Queen' }
         ];
         
         let lifeData = {
@@ -936,8 +937,18 @@
             const canvasWidth = canvas ? canvas.width : 800;
             const canvasHeight = canvas ? canvas.height : 500;
             
-            // Place life elements only on the mountain surface (not floating in air)
-            const mountainSurfaceY = canvasHeight * 0.6 + Math.random() * (canvasHeight * 0.2); // Between 60% and 80% of canvas height
+            // Find the chapter this life element belongs to
+            const chapter = lifeData.chapters.find(c => c.name === chapterName);
+            let baseX = chapter ? chapter.x : canvasWidth / 2;
+            let baseY = chapter ? chapter.y : canvasHeight * 0.7;
+            
+            // Calculate mountain surface height at the chapter's X position
+            // Mountain peaks: width * 0.2 -> height * 0.8, width * 0.4 -> height * 0.6, etc.
+            const mountainSurfaceY = getMountainHeightAtX(baseX, canvasWidth, canvasHeight);
+            
+            // Place life elements on or slightly below the mountain surface, near the chapter
+            const offsetX = (Math.random() - 0.5) * 80; // Spread around chapter position
+            const offsetY = Math.random() * 20 + 10; // Slightly below mountain surface
             
             return {
                 id: Date.now() + Math.random(),
@@ -945,12 +956,40 @@
                 name: lifeType.name,
                 goalTitle: goalTitle,
                 chapterName: chapterName,
-                x: Math.random() * (canvasWidth - 100) + 50,
-                y: mountainSurfaceY,
+                x: Math.max(30, Math.min(canvasWidth - 30, baseX + offsetX)),
+                y: mountainSurfaceY + offsetY,
                 scale: 0.8 + Math.random() * 0.4,
                 rotation: Math.random() * 0.4 - 0.2,
                 bobOffset: Math.random() * Math.PI * 2
             };
+        }
+        
+        function getMountainHeightAtX(x, canvasWidth, canvasHeight) {
+            // Calculate mountain height at specific X position based on the mountain shape
+            const normalizedX = x / canvasWidth;
+            
+            // Mountain peaks defined in drawMountainShape
+            const peaks = [
+                {x: 0, y: 1}, 
+                {x: 0.2, y: 0.8}, 
+                {x: 0.4, y: 0.6},
+                {x: 0.6, y: 0.4}, 
+                {x: 0.8, y: 0.25}, 
+                {x: 1, y: 0.2}
+            ];
+            
+            // Find which segment the X position falls into
+            for (let i = 0; i < peaks.length - 1; i++) {
+                if (normalizedX >= peaks[i].x && normalizedX <= peaks[i + 1].x) {
+                    // Linear interpolation between two peaks
+                    const t = (normalizedX - peaks[i].x) / (peaks[i + 1].x - peaks[i].x);
+                    const interpolatedY = peaks[i].y + t * (peaks[i + 1].y - peaks[i].y);
+                    return interpolatedY * canvasHeight;
+                }
+            }
+            
+            // Fallback
+            return canvasHeight * 0.8;
         }
         
         function addLifeForCompletedGoal(goalTitle, chapterName) {
@@ -1120,6 +1159,56 @@
             
             // Add timeline drag listeners
             setupTimelineDragListeners();
+            
+            // Add current day marker (red vertical line)
+            addCurrentDayMarker(startDate, unitWidth, timelineWidth);
+        }
+
+        function addCurrentDayMarker(startDate, unitWidth, timelineWidth) {
+            const timelineContent = document.getElementById('timeline-content');
+            const today = new Date();
+            let todayPosition;
+            
+            switch (timelineZoom.currentLevel) {
+                case 'Day':
+                    todayPosition = ((today - startDate) / (24 * 60 * 60 * 1000)) * unitWidth;
+                    break;
+                case 'Week':
+                    todayPosition = ((today - startDate) / (7 * 24 * 60 * 60 * 1000)) * unitWidth;
+                    break;
+                case 'Month':
+                    const todayMonths = (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth());
+                    const dayProgress = today.getDate() / new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                    todayPosition = (todayMonths + dayProgress) * unitWidth;
+                    break;
+                case 'Quarter':
+                    const todayQuarters = (today.getFullYear() - startDate.getFullYear()) * 4 + Math.floor(today.getMonth() / 3);
+                    const quarterProgress = (today.getMonth() % 3) / 3 + (today.getDate() - 1) / (new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() * 3);
+                    todayPosition = (todayQuarters + quarterProgress) * unitWidth;
+                    break;
+                case 'Year':
+                    const todayYears = today.getFullYear() - startDate.getFullYear();
+                    const yearProgress = (today.getMonth() + (today.getDate() - 1) / new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()) / 12;
+                    todayPosition = (todayYears + yearProgress) * unitWidth;
+                    break;
+            }
+            
+            // Only show marker if it's within the visible timeline
+            if (todayPosition >= 0 && todayPosition <= timelineWidth) {
+                const todayMarker = document.createElement('div');
+                todayMarker.className = 'current-day-marker';
+                todayMarker.style.cssText = `
+                    position: absolute;
+                    left: ${todayPosition}px;
+                    top: 0;
+                    bottom: 0;
+                    width: 2px;
+                    background-color: #e74c3c;
+                    z-index: 100;
+                    pointer-events: none;
+                `;
+                timelineContent.appendChild(todayMarker);
+            }
         }
 
         function startDragging(e) {
