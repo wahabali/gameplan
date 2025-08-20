@@ -764,16 +764,21 @@
             get currentLevel() { return this.levels[this.current]; }
         };
         
-        const lifeTypes = [
-            { emoji: '🌴', name: 'Palm Tree' },
-            { emoji: '🏎️', name: 'Luxury Car' },
-            { emoji: '👸', name: 'Queen' },
-            { emoji: '🚗', name: 'Sports Car' },
-            { emoji: '💃', name: 'Dancer' },
-            { emoji: '🏖️', name: 'Beach' },
-            { emoji: '💎', name: 'Diamond' },
-            { emoji: '🎯', name: 'Target' }
-        ];
+        const lifeTypes = {
+            task: [
+                { emoji: '🌴', name: 'Palm Tree' },
+                { emoji: '🌲', name: 'Pine Tree' },
+                { emoji: '🌳', name: 'Oak Tree' },
+                { emoji: '🎋', name: 'Bamboo' }
+            ],
+            goal: [
+                { emoji: '💎', name: 'Diamond' },
+                { emoji: '👸', name: 'Queen' },
+                { emoji: '🏆', name: 'Trophy' },
+                { emoji: '⭐', name: 'Star' },
+                { emoji: '👑', name: 'Crown' }
+            ]
+        };
         
         let lifeData = {
             chapters: [
@@ -974,6 +979,7 @@
             const userInfo = document.getElementById('user-info');
             const userPhoto = document.getElementById('user-photo');
             const userName = document.getElementById('user-name');
+            const dataInfo = document.getElementById('data-info');
 
             if (currentUser) {
                 loginBtn.style.display = 'none';
@@ -981,10 +987,18 @@
                 userPhoto.src = currentUser.photoURL || '';
                 userName.textContent = currentUser.displayName || currentUser.email;
                 updateSyncStatus('✅ Synced to cloud');
+                
+                if (dataInfo) {
+                    dataInfo.textContent = `☁️ Journey data: Cloud (${lifeData.chapters.length} chapters, ${lifeElements.length} life elements)`;
+                }
             } else {
                 loginBtn.style.display = 'block';
                 userInfo.style.display = 'none';
                 updateSyncStatus('💾 Saved locally');
+                
+                if (dataInfo) {
+                    dataInfo.textContent = `🏔️ Journey data: Local storage (${lifeData.chapters.length} chapters, ${lifeElements.length} life elements)`;
+                }
             }
         }
 
@@ -1373,30 +1387,51 @@
             ctx.fill();
         }
 
-        function generateLifeElement(goalTitle, chapterName) {
-            const lifeType = lifeTypes[lifeElements.length % lifeTypes.length];
+        function generateLifeElement(title, chapterName, type = 'goal') {
+            const lifeTypeArray = lifeTypes[type] || lifeTypes.goal;
+            const lifeElementsOfType = lifeElements.filter(el => el.type === type);
+            const lifeType = lifeTypeArray[lifeElementsOfType.length % lifeTypeArray.length];
+            
             const canvasWidth = canvas ? canvas.width : 800;
             const canvasHeight = canvas ? canvas.height : 500;
             
-            const mountainSurfaceY = canvasHeight * 0.6 + Math.random() * (canvasHeight * 0.2);
+            // Goals appear higher on the mountain (more prestigious)
+            const baseY = type === 'goal' 
+                ? canvasHeight * 0.5 + Math.random() * (canvasHeight * 0.15)  // Higher up (50-65%)
+                : canvasHeight * 0.65 + Math.random() * (canvasHeight * 0.15); // Lower down (65-80%)
             
             return {
                 id: Date.now() + Math.random(),
                 emoji: lifeType.emoji,
                 name: lifeType.name,
-                goalTitle: goalTitle,
+                title: title,
                 chapterName: chapterName,
+                type: type, // 'task' or 'goal'
                 x: Math.random() * (canvasWidth - 100) + 50,
-                y: mountainSurfaceY,
-                scale: 0.8 + Math.random() * 0.4,
+                y: baseY,
+                scale: type === 'goal' ? 1.0 + Math.random() * 0.3 : 0.8 + Math.random() * 0.3, // Goals are bigger
                 rotation: Math.random() * 0.4 - 0.2,
                 bobOffset: Math.random() * Math.PI * 2
             };
         }
         
         function addLifeForCompletedGoal(goalTitle, chapterName) {
-            const newLife = generateLifeElement(goalTitle, chapterName);
+            const newLife = generateLifeElement(goalTitle, chapterName, 'goal');
             lifeElements.push(newLife);
+        }
+        
+        function addLifeForCompletedTask(taskTitle, chapterName) {
+            const newLife = generateLifeElement(taskTitle, chapterName, 'task');
+            lifeElements.push(newLife);
+        }
+        
+        function removeLifeElement(title, chapterName, type = null) {
+            lifeElements = lifeElements.filter(life => {
+                const titleMatch = life.title === title || life.goalTitle === title;
+                const chapterMatch = life.chapterName === chapterName;
+                const typeMatch = type ? life.type === type : true;
+                return !(titleMatch && chapterMatch && typeMatch);
+            });
         }
         
         function drawLifeElements() {
@@ -1416,16 +1451,28 @@
         function drawLifeTooltip() {
             if (hoveredLifeElement) {
                 const life = hoveredLifeElement;
-                const tooltipText = life.goalTitle;
+                const tooltipText = life.title || life.goalTitle || life.name;
+                const typeText = life.type === 'goal' ? '🎯 Goal' : '📝 Task';
+                
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.font = '12px Arial';
-                const textWidth = ctx.measureText(tooltipText).width;
+                const textWidth = Math.max(
+                    ctx.measureText(tooltipText).width,
+                    ctx.measureText(typeText).width
+                );
                 const tooltipX = life.x - textWidth / 2 - 8;
-                const tooltipY = life.y - 35;
-                ctx.fillRect(tooltipX, tooltipY - 15, textWidth + 16, 20);
+                const tooltipY = life.y - 45;
+                
+                // Background
+                ctx.fillRect(tooltipX, tooltipY - 20, textWidth + 16, 35);
+                
+                // Text
                 ctx.fillStyle = 'white';
                 ctx.textAlign = 'center';
-                ctx.fillText(tooltipText, life.x, tooltipY - 5);
+                ctx.font = '10px Arial';
+                ctx.fillText(typeText, life.x, tooltipY - 10);
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(tooltipText, life.x, tooltipY + 5);
             }
         }
 
@@ -1782,12 +1829,16 @@
 
         function removeGoal(goalId) {
             const goal = currentEditingChapter.goals.find(g => g.id === goalId);
-            if (goal && goal.completed) {
-                lifeElements = lifeElements.filter(life => 
-                    !(life.goalTitle === goal.title && life.chapterName === currentEditingChapter.name));
+            if (goal) {
+                // Remove all associated life elements (both goal and tasks)
+                removeLifeElement(goal.title, currentEditingChapter.name, 'goal');
+                goal.tasks.forEach(task => {
+                    removeLifeElement(task.text, currentEditingChapter.name, 'task');
+                });
             }
             currentEditingChapter.goals = currentEditingChapter.goals.filter(goal => goal.id !== goalId);
             renderGoals();
+            autoSave();
         }
 
         function updateGoalTitle(goalId, newTitle) {
@@ -1802,15 +1853,18 @@
                 goal.completed = !goal.completed;
                 
                 if (goal.completed) {
+                    // Mark all tasks as completed when goal is completed
                     goal.tasks.forEach(task => task.completed = true);
+                    // Add goal life element (diamond/queen)
                     if (!wasCompleted) addLifeForCompletedGoal(goal.title, currentEditingChapter.name);
                 } else {
+                    // Remove goal life element when uncompleted
                     if (wasCompleted) {
-                        lifeElements = lifeElements.filter(life => 
-                            !(life.goalTitle === goal.title && life.chapterName === currentEditingChapter.name));
+                        removeLifeElement(goal.title, currentEditingChapter.name, 'goal');
                     }
                 }
                 renderGoals();
+                autoSave();
             }
         }
 
@@ -1825,8 +1879,23 @@
         function removeTask(goalId, taskId) {
             const goal = currentEditingChapter.goals.find(g => g.id === goalId);
             if (goal) {
+                const task = goal.tasks.find(t => t.id === taskId);
+                if (task && task.completed) {
+                    // Remove associated palm tree if task was completed
+                    removeLifeElement(task.text, currentEditingChapter.name, 'task');
+                }
+                
                 goal.tasks = goal.tasks.filter(task => task.id !== taskId);
+                
+                // Check if goal should still be completed after task removal
+                const allTasksCompleted = goal.tasks.length > 0 && goal.tasks.every(t => t.completed);
+                if (!allTasksCompleted && goal.completed) {
+                    goal.completed = false;
+                    removeLifeElement(goal.title, currentEditingChapter.name, 'goal');
+                }
+                
                 renderGoals();
+                autoSave();
             }
         }
 
@@ -1843,21 +1912,34 @@
             if (goal) {
                 const task = goal.tasks.find(t => t.id === taskId);
                 if (task) {
+                    const wasTaskCompleted = task.completed;
                     task.completed = !task.completed;
+                    
+                    // Handle task life element (palm tree)
+                    if (task.completed && !wasTaskCompleted) {
+                        // Task just completed - add palm tree
+                        addLifeForCompletedTask(task.text, currentEditingChapter.name);
+                    } else if (!task.completed && wasTaskCompleted) {
+                        // Task uncompleted - remove palm tree
+                        removeLifeElement(task.text, currentEditingChapter.name, 'task');
+                    }
+                    
                     const allTasksCompleted = goal.tasks.every(t => t.completed);
                     const wasGoalCompleted = goal.completed;
                     
-                    if (allTasksCompleted && goal.tasks.length > 0) {
+                    // Handle goal completion based on all tasks
+                    if (allTasksCompleted && goal.tasks.length > 0 && !wasGoalCompleted) {
+                        // All tasks completed - auto-complete goal and add diamond/queen
                         goal.completed = true;
-                        if (!wasGoalCompleted) addLifeForCompletedGoal(goal.title, currentEditingChapter.name);
-                    } else if (!task.completed) {
-                        if (wasGoalCompleted) {
-                            lifeElements = lifeElements.filter(life => 
-                                !(life.goalTitle === goal.title && life.chapterName === currentEditingChapter.name));
-                        }
+                        addLifeForCompletedGoal(goal.title, currentEditingChapter.name);
+                    } else if (!allTasksCompleted && wasGoalCompleted) {
+                        // Not all tasks completed - uncomplete goal and remove diamond/queen
                         goal.completed = false;
+                        removeLifeElement(goal.title, currentEditingChapter.name, 'goal');
                     }
+                    
                     renderGoals();
+                    autoSave();
                 }
             }
         }
@@ -1882,7 +1964,7 @@
             
             const chapterName = currentEditingChapter.name;
             if (confirm(`Are you sure you want to delete "${chapterName}"? This action cannot be undone.`)) {
-                // Remove associated life elements
+                // Remove all associated life elements from this chapter
                 lifeElements = lifeElements.filter(life => life.chapterName !== currentEditingChapter.name);
                 
                 lifeData.chapters = lifeData.chapters.filter(chapter => chapter.id !== currentEditingChapter.id);
