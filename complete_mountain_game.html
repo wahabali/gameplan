@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Life Story Tool - 2D Mountain</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(145deg, #e3e3e3, #f7f7f7);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #e0e0e0;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 
+                20px 20px 40px #bebebe,
+                -20px -20px 40px #ffffff;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a4a4a;
+            margin-bottom: 40px;
+            font-size: 32px;
+            font-weight: 300;
+            text-shadow: 1px 1px 2px #ffffff, -1px -1px 2px #bebebe;
+        }
+        
+        #mountain-canvas {
+            width: 100%;
+            height: 500px;
+            background: #e0e0e0;
+            border-radius: 25px;
+            margin-bottom: 30px;
+            box-shadow: 
+                inset 8px 8px 16px #bebebe,
+                inset -8px -8px 16px #ffffff;
+            cursor: pointer;
+        }
+        
+        .timeline-container {
+            background: #e0e0e0;
+            border-radius: 25px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 
+                8px 8px 16px #bebebe,
+                -8px -8px 16px #ffffff;
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .timeline-title {
+            color: #4a4a4a;
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px #ffffff, -1px -1px 2px #bebebe;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .zoom-btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #4a4a4a;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 
+                4px 4px 8px #bebebe,
+                -4px -4px 8px #ffffff;
+        }
+        
+        .zoom-btn:hover {
+            box-shadow: 
+                2px 2px 4px #bebebe,
+                -2px -2px 4px #ffffff;
+        }
+        
+        .zoom-btn:active {
+            box-shadow: 
+                inset 2px 2px 4px #bebebe,
+                inset -2px -2px 4px #ffffff;
+        }
+        
+        .zoom-level {
+            background: #e0e0e0;
+            border-radius: 15px;
+            padding: 8px 16px;
+            margin: 0 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a4a4a;
+            box-shadow: 
+                inset 3px 3px 6px #bebebe,
+                inset -3px -3px 6px #ffffff;
+        }
+        
+        .timeline {
+            height: 80px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            position: relative;
+            overflow-x: auto;
+            box-shadow: 
+                inset 6px 6px 12px #bebebe,
+                inset -6px -6px 12px #ffffff;
+        }
+        
+        .timeline-content {
+            height: 100%;
+            position: relative;
+            min-width: 100%;
+        }
+        
+        .time-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            border-left: 1px solid rgba(74, 74, 74, 0.2);
+            display: flex;
+            align-items: flex-end;
+            padding: 8px 4px;
+            font-size: 10px;
+            color: #6a6a6a;
+            font-weight: 500;
+        }
+        
+        .chapter-timeline-block {
+            position: absolute;
+            height: 40px;
+            top: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #ffffff;
+            cursor: grab;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            box-shadow: 
+                4px 4px 8px rgba(0, 0, 0, 0.1),
+                -2px -2px 4px rgba(255, 255, 255, 0.1);
+            user-select: none;
+        }
+        
+        .chapter-timeline-block:hover {
+            transform: scale(1.02) translateY(-1px);
+            box-shadow: 
+                6px 6px 12px rgba(0, 0, 0, 0.15),
+                -3px -3px 6px rgba(255, 255, 255, 0.15);
+        }
+        
+        .chapter-timeline-block:active {
+            cursor: grabbing;
+            transform: scale(1.0);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        #auth-section {
+            width: 100%;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        #user-info {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        
+        #user-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #4a4a4a;
+        }
+        
+        #sync-status {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .btn {
+            background: #e0e0e0;
+            border: none;
+            color: #4a4a4a;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 
+                6px 6px 12px #bebebe,
+                -6px -6px 12px #ffffff;
+        }
+        
+        .btn:hover {
+            box-shadow: 
+                4px 4px 8px #bebebe,
+                -4px -4px 8px #ffffff;
+        }
+        
+        .btn:active {
+            box-shadow: 
+                inset 4px 4px 8px #bebebe,
+                inset -4px -4px 8px #ffffff;
+        }
+        
+        .btn.primary {
+            background: linear-gradient(145deg, #7f8c8d, #95a5a6);
+            color: #ffffff;
+            box-shadow: 
+                6px 6px 12px #bebebe,
+                -6px -6px 12px #ffffff,
+                inset 0 0 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn.primary:hover {
+            box-shadow: 
+                4px 4px 8px #bebebe,
+                -4px -4px 8px #ffffff,
+                inset 0 0 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-info {
+            background: #e0e0e0;
+            border-radius: 25px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 
+                8px 8px 16px #bebebe,
+                -8px -8px 16px #ffffff;
+            min-height: 80px;
+        }
+        
+        .level-indicator {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #4a4a4a;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px #ffffff, -1px -1px 2px #bebebe;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 15px 0;
+            box-shadow: 
+                inset 3px 3px 6px #bebebe,
+                inset -3px -3px 6px #ffffff;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7f8c8d, #95a5a6);
+            border-radius: 6px;
+            transition: width 0.8s ease;
+            box-shadow: 0 0 10px rgba(127, 140, 141, 0.3);
+        }
+        
+        /* Chapter Editor Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            display: none;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .chapter-editor {
+            background: #e0e0e0;
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 
+                20px 20px 40px #bebebe,
+                -20px -20px 40px #ffffff;
+        }
+        
+        .editor-header {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid transparent;
+            background: linear-gradient(#e0e0e0, #e0e0e0) padding-box,
+                       linear-gradient(145deg, #bebebe, #ffffff) border-box;
+        }
+        
+        .close-btn {
+            background: #e0e0e0;
+            border: none;
+            color: #4a4a4a;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 
+                4px 4px 8px #bebebe,
+                -4px -4px 8px #ffffff;
+        }
+        
+        .close-btn:hover {
+            box-shadow: 
+                2px 2px 4px #bebebe,
+                -2px -2px 4px #ffffff;
+        }
+        
+        .close-btn:active {
+            box-shadow: 
+                inset 2px 2px 4px #bebebe,
+                inset -2px -2px 4px #ffffff;
+        }
+        
+        .chapter-form {
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #4a4a4a;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px #ffffff, -1px -1px 2px #bebebe;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            font-size: 14px;
+            background: #e0e0e0;
+            color: #4a4a4a;
+            transition: all 0.2s ease;
+            box-shadow: 
+                inset 4px 4px 8px #bebebe,
+                inset -4px -4px 8px #ffffff;
+            box-sizing: border-box;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            box-shadow: 
+                inset 6px 6px 12px #bebebe,
+                inset -6px -6px 12px #ffffff;
+        }
+        
+        .date-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .goals-section {
+            background: #e0e0e0;
+            border-radius: 25px;
+            padding: 25px;
+            margin: 25px 0;
+            box-shadow: 
+                inset 6px 6px 12px #bebebe,
+                inset -6px -6px 12px #ffffff;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4a4a4a;
+            text-shadow: 1px 1px 2px #ffffff, -1px -1px 2px #bebebe;
+        }
+        
+        .goal-item {
+            background: #e0e0e0;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 
+                6px 6px 12px #bebebe,
+                -6px -6px 12px #ffffff;
+        }
+        
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .goal-title {
+            font-weight: bold;
+            color: #4a4a4a;
+            font-size: 16px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+            flex-grow: 1;
+            margin-right: 10px;
+            box-shadow: 
+                inset 3px 3px 6px #bebebe,
+                inset -3px -3px 6px #ffffff;
+        }
+        
+        .goal-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 5px;
+            position: relative;
+            box-shadow: 
+                inset 2px 2px 4px #bebebe,
+                inset -2px -2px 4px #ffffff;
+        }
+        
+        .goal-checkbox:checked {
+            background: linear-gradient(145deg, #7f8c8d, #95a5a6);
+            box-shadow: 
+                inset 2px 2px 4px rgba(0, 0, 0, 0.2),
+                inset -2px -2px 4px rgba(255, 255, 255, 0.1);
+        }
+        
+        .goal-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .task-list {
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #4a4a4a;
+        }
+        
+        .task-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 4px;
+            position: relative;
+            box-shadow: 
+                inset 2px 2px 4px #bebebe,
+                inset -2px -2px 4px #ffffff;
+        }
+        
+        .task-checkbox:checked {
+            background: linear-gradient(145deg, #2ecc71, #27ae60);
+            box-shadow: 
+                inset 2px 2px 4px rgba(0, 0, 0, 0.2),
+                inset -2px -2px 4px rgba(255, 255, 255, 0.1);
+        }
+        
+        .task-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .task-text {
+            flex-grow: 1;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            box-shadow: 
+                inset 2px 2px 4px #bebebe,
+                inset -2px -2px 4px #ffffff;
+        }
+        
+        .task-text.completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .add-btn {
+            background: #e0e0e0;
+            border: none;
+            color: #4a4a4a;
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 
+                4px 4px 8px #bebebe,
+                -4px -4px 8px #ffffff;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .add-btn:hover {
+            box-shadow: 
+                2px 2px 4px #bebebe,
+                -2px -2px 4px #ffffff;
+        }
+        
+        .add-btn:active {
+            box-shadow: 
+                inset 2px 2px 4px #bebebe,
+                inset -2px -2px 4px #ffffff;
+        }
+        
+        .remove-btn {
+            background: #e0e0e0;
+            border: none;
+            color: #4a4a4a;
+            padding: 4px 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 
+                3px 3px 6px #bebebe,
+                -3px -3px 6px #ffffff;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .remove-btn:hover {
+            box-shadow: 
+                2px 2px 4px #bebebe,
+                -2px -2px 4px #ffffff;
+        }
+        
+        .remove-btn:active {
+            box-shadow: 
+                inset 2px 2px 4px #bebebe,
+                inset -2px -2px 4px #ffffff;
+        }
+        
+        .save-changes-btn {
+            background: linear-gradient(145deg, #7f8c8d, #95a5a6);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 25px;
+            transition: all 0.2s ease;
+            box-shadow: 
+                6px 6px 12px #bebebe,
+                -6px -6px 12px #ffffff;
+        }
+        
+        .save-changes-btn:hover {
+            box-shadow: 
+                4px 4px 8px #bebebe,
+                -4px -4px 8px #ffffff;
+        }
+        
+        .save-changes-btn:active {
+            box-shadow: 
+                inset 4px 4px 8px rgba(0, 0, 0, 0.1),
+                inset -4px -4px 8px rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏔️ Your Life Mountain Game</h1>
+        
+        <canvas id="mountain-canvas"></canvas>
+        
+        <div class="timeline-container">
+            <div class="timeline-header">
+                <h3 class="timeline-title">Life Timeline</h3>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomOut()">-</button>
+                    <div class="zoom-level" id="zoomLevel">Day</div>
+                    <button class="zoom-btn" onclick="zoomIn()">+</button>
+                </div>
+            </div>
+            <div class="timeline" id="timeline">
+                <div class="timeline-content" id="timeline-content">
+                    <!-- Timeline content will be generated here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div id="auth-section">
+                <button class="btn primary" id="login-btn" onclick="signInWithGoogle()" style="display: none;">
+                    🔐 Login with Google to Save to Cloud
+                </button>
+                <div id="user-info">
+                    <img id="user-photo" alt="User photo">
+                    <span id="user-name"></span>
+                    <button class="btn" onclick="signOut()">Logout</button>
+                </div>
+                <div id="sync-status"></div>
+            </div>
+            <button class="btn primary" onclick="addNewChapter()">+ New Chapter</button>
+            <button class="btn" onclick="saveProgress()">💾 Download Backup</button>
+            <button class="btn" onclick="loadProgress()">📂 Load from File</button>
+        </div>
+        
+        <div class="status-info">
+            <div class="level-indicator">Level <span id="current-level">1</span> - <span id="current-chapter">Starting Journey</span></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 10%;"></div>
+            </div>
+            <div id="chapter-details">Click on mountain levels or timeline to explore your journey</div>
+        </div>
+    </div>
+
+    <!-- Chapter Editor Modal -->
+    <div class="modal-overlay" id="chapterModal">
+        <div class="chapter-editor">
+            <div class="editor-header">
+                <div style="display: flex; gap: 10px; margin-left: auto;">
+                    <button class="zoom-btn" onclick="deleteChapter()">-</button>
+                    <button class="close-btn" onclick="closeChapterEditor()">&times;</button>
+                </div>
+            </div>
+            
+            <div class="chapter-form">
+                <div class="form-group">
+                    <label class="form-label">Chapter Name</label>
+                    <input type="text" class="form-input" id="chapterName" placeholder="Enter chapter name">
+                </div>
+                
+                <div class="date-inputs">
+                    <div class="form-group">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-input" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-input" id="endDate">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="goals-section">
+                <div class="section-header">
+                    <div class="section-title">🎯 Goals (Major Achievements)</div>
+                    <button class="add-btn" onclick="addNewGoal()">+</button>
+                </div>
+                <div id="goalsContainer">
+                    <!-- Goals will be generated here -->
+                </div>
+            </div>
+            
+            <button class="save-changes-btn" onclick="saveChapterChanges()">Save Changes</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let lifeElements = [];
+        let currentEditingChapter = null;
+        let canvas, ctx;
+        let animationFrame = 0;
+        let hoveredLifeElement = null;
+        let isDraggingChapter = false;
+        let draggedChapter = null;
+        let dragStartX = 0;
+        let auth, db, currentUser = null;
+        
+        let timelineZoom = {
+            levels: ['Day', 'Week', 'Month', 'Quarter', 'Year'],
+            current: 0,
+            get currentLevel() { return this.levels[this.current]; }
+        };
+        
+        const lifeTypes = [
+            { emoji: '🌴', name: 'Palm Tree' },
+            { emoji: '🏎️', name: 'Luxury Car' },
+            { emoji: '👸', name: 'Queen' },
+            { emoji: '🚗', name: 'Sports Car' },
+            { emoji: '💃', name: 'Dancer' },
+            { emoji: '🏖️', name: 'Beach' },
+            { emoji: '💎', name: 'Diamond' },
+            { emoji: '🎯', name: 'Target' }
+        ];
+        
+        let lifeData = {
+            chapters: [
+                {
+                    id: 1,
+                    name: "Starting Journey",
+                    level: 1,
+                    startDate: new Date().toISOString().split('T')[0],
+                    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    x: 50,
+                    y: 400,
+                    color: "#667eea",
+                    goals: [{
+                        id: 1,
+                        title: "Set Life Direction",
+                        completed: false,
+                        tasks: [
+                            { id: 1, text: "Define personal values", completed: false },
+                            { id: 2, text: "Set 5-year vision", completed: false }
+                        ]
+                    }]
+                }
+            ],
+            currentLevel: 1,
+            currentChapter: 0
+        };
+
+        // Firebase initialization
+        async function initializeFirebase() {
+            try {
+                await loadFirebaseScripts();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                if (!window.firebase) {
+                    throw new Error('Firebase not loaded');
+                }
+
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBPhg5eD11hfblwG8ZH-Uo6CDPqKxSTOcA",
+                    authDomain: "speed00.firebaseapp.com",
+                    projectId: "speed00",
+                    storageBucket: "speed00.firebasestorage.app",
+                    messagingSenderId: "635012567283",
+                    appId: "1:635012567283:web:c2cf42afdafcd3d7a1e786"
+                };
+
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+
+                auth.onAuthStateChanged((user) => {
+                    currentUser = user;
+                    updateAuthUI();
+                    if (user) {
+                        loadFromCloud();
+                    } else {
+                        loadFromLocal();
+                    }
+                });
+
+                document.getElementById('login-btn').style.display = 'block';
+                updateSyncStatus('🔥 Firebase ready - click login to sync');
+                
+            } catch (error) {
+                console.error('Firebase initialization failed:', error);
+                loadFromLocal();
+                document.getElementById('login-btn').style.display = 'none';
+                updateSyncStatus('⚠️ Cloud sync unavailable - using local storage');
+            }
+        }
+
+        function loadFirebaseScripts() {
+            return new Promise((resolve, reject) => {
+                if (window.firebase) {
+                    resolve();
+                    return;
+                }
+
+                let scriptsLoaded = 0;
+                const totalScripts = 3;
+                
+                function checkComplete() {
+                    scriptsLoaded++;
+                    if (scriptsLoaded === totalScripts) {
+                        setTimeout(resolve, 500);
+                    }
+                }
+                
+                const script1 = document.createElement('script');
+                script1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+                script1.onload = checkComplete;
+                script1.onerror = () => reject(new Error('Failed to load Firebase App'));
+                document.head.appendChild(script1);
+                
+                const script2 = document.createElement('script');
+                script2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
+                script2.onload = checkComplete;
+                script2.onerror = () => reject(new Error('Failed to load Firebase Auth'));
+                document.head.appendChild(script2);
+                
+                const script3 = document.createElement('script');
+                script3.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
+                script3.onload = checkComplete;
+                script3.onerror = () => reject(new Error('Failed to load Firebase Firestore'));
+                document.head.appendChild(script3);
+            });
+        }
+
+        async function signInWithGoogle() {
+            try {
+                updateSyncStatus('🔄 Attempting Google sign-in...');
+                
+                if (!auth) {
+                    throw new Error('Firebase Auth not initialized');
+                }
+                
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.addScope('email');
+                provider.addScope('profile');
+                provider.setCustomParameters({
+                    prompt: 'select_account'
+                });
+                
+                const result = await auth.signInWithPopup(provider);
+                console.log('Sign-in successful:', result.user.displayName);
+                updateSyncStatus('✅ Signed in successfully!');
+                
+            } catch (error) {
+                console.error('Sign-in error:', error);
+                let errorMessage = 'Sign in failed. ';
+                
+                switch (error.code) {
+                    case 'auth/popup-closed-by-user':
+                        errorMessage += 'Popup was closed before sign-in completed.';
+                        break;
+                    case 'auth/popup-blocked':
+                        errorMessage += 'Popup was blocked by your browser. Please allow popups.';
+                        break;
+                    case 'auth/cancelled-popup-request':
+                        errorMessage += 'Another popup is already open.';
+                        break;
+                    default:
+                        errorMessage += `Error: ${error.message}`;
+                }
+                
+                alert(errorMessage);
+                updateSyncStatus('❌ Sign-in failed');
+            }
+        }
+
+        async function signOut() {
+            try {
+                await auth.signOut();
+                console.log('Signed out successfully');
+                updateSyncStatus('Signed out - data saved locally 💾');
+            } catch (error) {
+                console.error('Sign out failed:', error);
+            }
+        }
+
+        function updateAuthUI() {
+            const loginBtn = document.getElementById('login-btn');
+            const userInfo = document.getElementById('user-info');
+            const userPhoto = document.getElementById('user-photo');
+            const userName = document.getElementById('user-name');
+
+            if (currentUser) {
+                loginBtn.style.display = 'none';
+                userInfo.style.display = 'flex';
+                userPhoto.src = currentUser.photoURL || '';
+                userName.textContent = currentUser.displayName || currentUser.email;
+                updateSyncStatus('✅ Synced to cloud');
+            } else {
+                loginBtn.style.display = 'block';
+                userInfo.style.display = 'none';
+                updateSyncStatus('💾 Saved locally');
+            }
+        }
+
+        function updateSyncStatus(message) {
+            const statusEl = document.getElementById('sync-status');
+            if (statusEl) {
+                statusEl.textContent = message;
+                setTimeout(() => {
+                    if (statusEl.textContent === message) {
+                        statusEl.textContent = currentUser ? '☁️ Cloud sync active' : '💾 Local storage';
+                    }
+                }, 3000);
+            }
+        }
+
+        async function saveToCloud() {
+            if (!currentUser || !db) return false;
+            
+            try {
+                const saveData = {
+                    lifeData: lifeData,
+                    lifeElements: lifeElements,
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                await db.collection('lifeMountainData').doc(currentUser.uid).set(saveData);
+                console.log('Progress saved to cloud successfully');
+                updateSyncStatus('✅ Saved to cloud');
+                return true;
+            } catch (error) {
+                console.error('Failed to save to cloud:', error);
+                updateSyncStatus('❌ Cloud save failed');
+                return false;
+            }
+        }
+
+        async function loadFromCloud() {
+            if (!currentUser || !db) return false;
+            
+            try {
+                const doc = await db.collection('lifeMountainData').doc(currentUser.uid).get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    lifeData = data.lifeData;
+                    lifeElements = data.lifeElements || [];
+                    updateTimeline();
+                    updateStatus();
+                    drawMountain();
+                    console.log('Progress loaded from cloud successfully');
+                    updateSyncStatus('✅ Loaded from cloud');
+                    return true;
+                } else {
+                    updateSyncStatus('No cloud data found - starting fresh');
+                }
+            } catch (error) {
+                console.error('Failed to load from cloud:', error);
+                updateSyncStatus('❌ Cloud load failed');
+            }
+            return false;
+        }
+
+        function saveToLocal() {
+            try {
+                const saveData = {
+                    lifeData: lifeData,
+                    lifeElements: lifeElements,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('lifeMountainData', JSON.stringify(saveData));
+                console.log('Progress saved locally');
+            } catch (error) {
+                console.error('Failed to save locally:', error);
+            }
+        }
+
+        function loadFromLocal() {
+            try {
+                const savedData = localStorage.getItem('lifeMountainData');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    lifeData = data.lifeData || lifeData;
+                    lifeElements = data.lifeElements || [];
+                    updateTimeline();
+                    updateStatus();
+                    drawMountain();
+                    console.log('Progress loaded from local storage');
+                    updateSyncStatus('💾 Loaded from local storage');
+                }
+            } catch (error) {
+                console.error('Failed to load from local storage:', error);
+            }
+        }
+
+        async function autoSave() {
+            if (currentUser) {
+                await saveToCloud();
+            } else {
+                saveToLocal();
+            }
+        }
+
+        function init() {
+            canvas = document.getElementById('mountain-canvas');
+            ctx = canvas.getContext('2d');
+            if (!canvas) return;
+            resizeCanvas();
+            animate();
+            updateTimeline();
+            updateStatus();
+            initializeFirebase();
+        }
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            drawMountain();
+        }
+
+        function drawMountain() {
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+            drawMountainShape(width, height);
+            drawPath();
+            drawLifeElements();
+            drawChapters();
+            drawCharacter();
+            drawLifeTooltip();
+        }
+
+        function drawMountainShape(width, height) {
+            const gradient = ctx.createLinearGradient(0, height, 0, 0);
+            gradient.addColorStop(0, 'rgba(46, 125, 50, 0.1)');
+            gradient.addColorStop(0.7, 'rgba(76, 175, 80, 0.05)');
+            gradient.addColorStop(1, 'rgba(129, 199, 132, 0.02)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            
+            const peaks = [
+                {x: 0, y: height}, {x: width * 0.2, y: height * 0.8}, {x: width * 0.4, y: height * 0.6},
+                {x: width * 0.6, y: height * 0.4}, {x: width * 0.8, y: height * 0.25}, {x: width, y: height * 0.2}, {x: width, y: height}
+            ];
+            
+            peaks.forEach(peak => ctx.lineTo(peak.x, peak.y));
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(46, 125, 50, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawPath() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([]);
+            
+            ctx.beginPath();
+            lifeData.chapters.forEach((chapter, index) => {
+                if (index === 0) {
+                    ctx.moveTo(chapter.x, chapter.y);
+                } else {
+                    const prevChapter = lifeData.chapters[index - 1];
+                    const cpx = (prevChapter.x + chapter.x) / 2;
+                    const cpy = (prevChapter.y + chapter.y) / 2 - 30;
+                    ctx.quadraticCurveTo(cpx, cpy, chapter.x, chapter.y);
+                }
+            });
+            ctx.stroke();
+        }
+
+        function drawChapters() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            lifeData.chapters.forEach((chapter, index) => {
+                const isActive = chapter.startDate <= today && chapter.endDate >= today;
+                const isPast = chapter.endDate < today;
+                
+                const completedGoals = chapter.goals.filter(goal => goal.completed).length;
+                const totalGoals = chapter.goals.length;
+                const goalProgress = totalGoals > 0 ? completedGoals / totalGoals : 0;
+                
+                ctx.beginPath();
+                const radius = isPast ? 15 : isActive ? 22 : 12;
+                ctx.arc(chapter.x, chapter.y, radius, 0, 2 * Math.PI);
+                
+                if (isActive) {
+                    const goldGradient = ctx.createRadialGradient(chapter.x, chapter.y, 0, chapter.x, chapter.y, radius);
+                    goldGradient.addColorStop(0, '#ffd700');
+                    goldGradient.addColorStop(1, '#ffa500');
+                    ctx.fillStyle = goldGradient;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 4;
+                } else if (isPast) {
+                    ctx.fillStyle = chapter.color;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                } else {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.lineWidth = 2;
+                }
+                
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.fillStyle = isPast || isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.8)';
+                ctx.font = isActive ? 'bold 16px Arial' : 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(chapter.level, chapter.x, chapter.y + 5);
+                
+                ctx.fillStyle = isActive ? '#2c3e50' : '#4a4a4a';
+                ctx.font = isActive ? 'bold 14px Arial' : '12px Arial';
+                ctx.fillText(chapter.name, chapter.x, chapter.y - 30);
+                
+                if (isActive && totalGoals > 0) {
+                    drawGoalProgressRing(chapter.x, chapter.y, goalProgress);
+                }
+                
+                drawGoalIndicator(chapter.x, chapter.y + 40, completedGoals, totalGoals, isActive);
+                
+                if (isActive) {
+                    const pulseRadius = radius + Math.sin(animationFrame * 0.1) * 3;
+                    ctx.beginPath();
+                    ctx.arc(chapter.x, chapter.y, pulseRadius, 0, 2 * Math.PI);
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function drawGoalProgressRing(x, y, progress) {
+            ctx.strokeStyle = '#2ecc71';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(x, y, 25, -Math.PI/2, -Math.PI/2 + (progress * 2 * Math.PI));
+            ctx.stroke();
+        }
+
+        function drawGoalIndicator(x, y, completed, total, isActive = false) {
+            ctx.fillStyle = isActive ? '#2c3e50' : 'rgba(74, 74, 74, 0.8)';
+            ctx.font = isActive ? 'bold 11px Arial' : '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${completed}/${total} goals`, x, y);
+        }
+
+        function drawCharacter() {
+            const currentChapter = getCurrentChapter();
+            const x = currentChapter.x;
+            const y = currentChapter.y - 45 + Math.sin(animationFrame * 0.1) * 3;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(x, currentChapter.y + 15, 10, 5, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(x - 3, y - 3, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function generateLifeElement(goalTitle, chapterName) {
+            const lifeType = lifeTypes[lifeElements.length % lifeTypes.length];
+            const canvasWidth = canvas ? canvas.width : 800;
+            const canvasHeight = canvas ? canvas.height : 500;
+            
+            const mountainSurfaceY = canvasHeight * 0.6 + Math.random() * (canvasHeight * 0.2);
+            
+            return {
+                id: Date.now() + Math.random(),
+                emoji: lifeType.emoji,
+                name: lifeType.name,
+                goalTitle: goalTitle,
+                chapterName: chapterName,
+                x: Math.random() * (canvasWidth - 100) + 50,
+                y: mountainSurfaceY,
+                scale: 0.8 + Math.random() * 0.4,
+                rotation: Math.random() * 0.4 - 0.2,
+                bobOffset: Math.random() * Math.PI * 2
+            };
+        }
+        
+        function addLifeForCompletedGoal(goalTitle, chapterName) {
+            const newLife = generateLifeElement(goalTitle, chapterName);
+            lifeElements.push(newLife);
+        }
+        
+        function drawLifeElements() {
+            lifeElements.forEach(life => {
+                ctx.save();
+                const floatY = life.y + Math.sin(animationFrame * 0.05 + life.bobOffset) * 2;
+                ctx.translate(life.x, floatY);
+                ctx.rotate(life.rotation);
+                ctx.scale(life.scale, life.scale);
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(life.emoji, 0, 0);
+                ctx.restore();
+            });
+        }
+        
+        function drawLifeTooltip() {
+            if (hoveredLifeElement) {
+                const life = hoveredLifeElement;
+                const tooltipText = life.goalTitle;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.font = '12px Arial';
+                const textWidth = ctx.measureText(tooltipText).width;
+                const tooltipX = life.x - textWidth / 2 - 8;
+                const tooltipY = life.y - 35;
+                ctx.fillRect(tooltipX, tooltipY - 15, textWidth + 16, 20);
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.fillText(tooltipText, life.x, tooltipY - 5);
+            }
+        }
+
+        function getCurrentChapter() {
+            const today = new Date().toISOString().split('T')[0];
+            return lifeData.chapters.find(chapter => 
+                chapter.startDate <= today && chapter.endDate >= today
+            ) || lifeData.chapters[lifeData.chapters.length - 1];
+        }
+
+        function updateTimeline() {
+            const timelineContent = document.getElementById('timeline-content');
+            const zoomLevelElement = document.getElementById('zoomLevel');
+            timelineContent.innerHTML = '';
+            zoomLevelElement.textContent = timelineZoom.currentLevel;
+            
+            const timelineWidth = timelineContent.offsetWidth || 1000;
+            const today = new Date();
+            let startDate, endDate, totalUnits, unitWidth, formatFunc, stepSize;
+            
+            switch (timelineZoom.currentLevel) {
+                case 'Day':
+                    startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    endDate = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
+                    totalUnits = 90; unitWidth = timelineWidth / totalUnits; stepSize = 5;
+                    formatFunc = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    break;
+                case 'Week':
+                    startDate = new Date(today.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
+                    endDate = new Date(today.getTime() + 24 * 7 * 24 * 60 * 60 * 1000);
+                    totalUnits = 36; unitWidth = timelineWidth / totalUnits; stepSize = 2;
+                    formatFunc = (date) => 'W' + getWeekNumber(date);
+                    break;
+                case 'Month':
+                    startDate = new Date(today.getFullYear(), today.getMonth() - 6, 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth() + 12, 1);
+                    totalUnits = 18; unitWidth = timelineWidth / totalUnits; stepSize = 1;
+                    formatFunc = (date) => date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                    break;
+                case 'Quarter':
+                    startDate = new Date(today.getFullYear() - 1, 0, 1);
+                    endDate = new Date(today.getFullYear() + 2, 0, 1);
+                    totalUnits = 12; unitWidth = timelineWidth / totalUnits; stepSize = 1;
+                    formatFunc = (date) => 'Q' + Math.ceil((date.getMonth() + 1) / 3) + ' ' + date.getFullYear().toString().substr(-2);
+                    break;
+                case 'Year':
+                    startDate = new Date(today.getFullYear() - 2, 0, 1);
+                    endDate = new Date(today.getFullYear() + 5, 0, 1);
+                    totalUnits = 7; unitWidth = timelineWidth / totalUnits; stepSize = 1;
+                    formatFunc = (date) => date.getFullYear().toString();
+                    break;
+            }
+            
+            timelineContent.dataset.startDate = startDate.getTime();
+            timelineContent.dataset.unitWidth = unitWidth;
+            timelineContent.dataset.totalUnits = totalUnits;
+            timelineContent.dataset.timelineLevel = timelineZoom.currentLevel;
+            
+            for (let i = 0; i <= totalUnits; i += stepSize) {
+                let markerDate;
+                switch (timelineZoom.currentLevel) {
+                    case 'Day': markerDate = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000); break;
+                    case 'Week': markerDate = new Date(startDate.getTime() + i * 7 * 24 * 60 * 60 * 1000); break;
+                    case 'Month': markerDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1); break;
+                    case 'Quarter': markerDate = new Date(startDate.getFullYear(), startDate.getMonth() + i * 3, 1); break;
+                    case 'Year': markerDate = new Date(startDate.getFullYear() + i, 0, 1); break;
+                }
+                
+                const marker = document.createElement('div');
+                marker.className = 'time-marker';
+                marker.style.left = (i * unitWidth) + 'px';
+                marker.textContent = formatFunc(markerDate);
+                timelineContent.appendChild(marker);
+            }
+            
+            lifeData.chapters.forEach(chapter => {
+                const chapterStart = new Date(chapter.startDate);
+                const chapterEnd = new Date(chapter.endDate);
+                let startPosition, endPosition;
+                
+                switch (timelineZoom.currentLevel) {
+                    case 'Day':
+                        startPosition = ((chapterStart - startDate) / (24 * 60 * 60 * 1000)) * unitWidth;
+                        endPosition = ((chapterEnd - startDate) / (24 * 60 * 60 * 1000)) * unitWidth;
+                        break;
+                    case 'Week':
+                        startPosition = ((chapterStart - startDate) / (7 * 24 * 60 * 60 * 1000)) * unitWidth;
+                        endPosition = ((chapterEnd - startDate) / (7 * 24 * 60 * 60 * 1000)) * unitWidth;
+                        break;
+                    case 'Month':
+                        const startMonths = (chapterStart.getFullYear() - startDate.getFullYear()) * 12 + (chapterStart.getMonth() - startDate.getMonth());
+                        const endMonths = (chapterEnd.getFullYear() - startDate.getFullYear()) * 12 + (chapterEnd.getMonth() - startDate.getMonth());
+                        startPosition = startMonths * unitWidth; endPosition = endMonths * unitWidth;
+                        break;
+                    case 'Quarter':
+                        const startQuarters = (chapterStart.getFullYear() - startDate.getFullYear()) * 4 + Math.floor(chapterStart.getMonth() / 3);
+                        const endQuarters = (chapterEnd.getFullYear() - startDate.getFullYear()) * 4 + Math.floor(chapterEnd.getMonth() / 3);
+                        startPosition = startQuarters * unitWidth; endPosition = endQuarters * unitWidth;
+                        break;
+                    case 'Year':
+                        startPosition = (chapterStart.getFullYear() - startDate.getFullYear()) * unitWidth;
+                        endPosition = (chapterEnd.getFullYear() - startDate.getFullYear()) * unitWidth;
+                        break;
+                }
+                
+                const width = Math.max(endPosition - startPosition, 20);
+                if (startPosition >= -50 && startPosition <= timelineWidth + 50) {
+                    const block = document.createElement('div');
+                    block.className = 'chapter-timeline-block';
+                    block.style.left = Math.max(0, startPosition) + 'px';
+                    block.style.width = width + 'px';
+                    block.style.backgroundColor = chapter.color;
+                    block.textContent = chapter.name;
+                    block.style.cursor = 'grab';
+                    
+                    block.dataset.chapterId = chapter.id;
+                    block.dataset.originalWidth = width;
+                    
+                    block.addEventListener('mousedown', startDragging);
+                    block.addEventListener('click', (e) => {
+                        if (!isDraggingChapter) {
+                            e.stopPropagation();
+                            openChapterEditor(chapter);
+                        }
+                    });
+                    
+                    timelineContent.appendChild(block);
+                }
+            });
+            
+            setupTimelineDragListeners();
+        }
+
+        function startDragging(e) {
+            isDraggingChapter = true;
+            draggedChapter = lifeData.chapters.find(c => c.id == e.target.dataset.chapterId);
+            dragStartX = e.clientX;
+            e.target.style.cursor = 'grabbing';
+            e.target.style.zIndex = '1000';
+            e.preventDefault();
+        }
+
+        function snapToTimelineGrid(mouseX, timelineLevel, unitWidth, startDate) {
+            let snapPosition, newStartDate;
+            
+            switch (timelineLevel) {
+                case 'Day':
+                    const dayIndex = Math.round(mouseX / unitWidth);
+                    snapPosition = dayIndex * unitWidth;
+                    newStartDate = new Date(startDate.getTime() + dayIndex * 24 * 60 * 60 * 1000);
+                    break;
+                case 'Week':
+                    const weekIndex = Math.round(mouseX / unitWidth);
+                    snapPosition = weekIndex * unitWidth;
+                    newStartDate = new Date(startDate.getTime() + weekIndex * 7 * 24 * 60 * 60 * 1000);
+                    const dayOfWeek = newStartDate.getDay();
+                    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                    newStartDate.setDate(newStartDate.getDate() + mondayOffset);
+                    break;
+                case 'Month':
+                    const monthIndex = Math.round(mouseX / unitWidth);
+                    snapPosition = monthIndex * unitWidth;
+                    newStartDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthIndex, 1);
+                    break;
+                case 'Quarter':
+                    const quarterIndex = Math.round(mouseX / unitWidth);
+                    snapPosition = quarterIndex * unitWidth;
+                    const quarterStartMonth = Math.floor(startDate.getMonth() / 3) * 3 + quarterIndex * 3;
+                    newStartDate = new Date(startDate.getFullYear(), quarterStartMonth, 1);
+                    break;
+                case 'Year':
+                    const yearIndex = Math.round(mouseX / unitWidth);
+                    snapPosition = yearIndex * unitWidth;
+                    newStartDate = new Date(startDate.getFullYear() + yearIndex, 0, 1);
+                    break;
+            }
+            
+            return { snapPosition, newStartDate };
+        }
+
+        function setupTimelineDragListeners() {
+            const timeline = document.getElementById('timeline');
+            
+            timeline.addEventListener('mousemove', (e) => {
+                if (isDraggingChapter && draggedChapter) {
+                    const timelineContent = document.getElementById('timeline-content');
+                    const timelineRect = timeline.getBoundingClientRect();
+                    const mouseX = e.clientX - timelineRect.left;
+                    
+                    const startDate = new Date(parseInt(timelineContent.dataset.startDate));
+                    const unitWidth = parseFloat(timelineContent.dataset.unitWidth);
+                    const timelineLevel = timelineContent.dataset.timelineLevel;
+                    
+                    const { snapPosition, newStartDate } = snapToTimelineGrid(mouseX, timelineLevel, unitWidth, startDate);
+                    
+                    if (newStartDate) {
+                        const originalStart = new Date(draggedChapter.startDate);
+                        const originalEnd = new Date(draggedChapter.endDate);
+                        const durationDays = Math.round((originalEnd - originalStart) / (24 * 60 * 60 * 1000));
+                        
+                        const newEndDate = new Date(newStartDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+                        
+                        draggedChapter.startDate = newStartDate.toISOString().split('T')[0];
+                        draggedChapter.endDate = newEndDate.toISOString().split('T')[0];
+                        
+                        const block = e.target.closest('.chapter-timeline-block');
+                        if (block) {
+                            block.style.left = Math.max(0, snapPosition) + 'px';
+                        }
+                        
+                        updateStatus();
+                        drawMountain();
+                    }
+                }
+            });
+            
+            timeline.addEventListener('mouseup', (e) => {
+                if (isDraggingChapter) {
+                    isDraggingChapter = false;
+                    if (draggedChapter) {
+                        updateTimeline();
+                        updateStatus();
+                        drawMountain();
+                        autoSave();
+                        
+                        if (currentEditingChapter && currentEditingChapter.id === draggedChapter.id) {
+                            document.getElementById('startDate').value = draggedChapter.startDate;
+                            document.getElementById('endDate').value = draggedChapter.endDate;
+                        }
+                    }
+                    draggedChapter = null;
+                    
+                    const blocks = document.querySelectorAll('.chapter-timeline-block');
+                    blocks.forEach(block => {
+                        block.style.cursor = 'grab';
+                        block.style.zIndex = 'auto';
+                    });
+                }
+            });
+            
+            timeline.addEventListener('mouseleave', (e) => {
+                if (isDraggingChapter) {
+                    isDraggingChapter = false;
+                    updateTimeline();
+                    draggedChapter = null;
+                }
+            });
+        }
+        
+        function getWeekNumber(date) {
+            const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        }
+
+        function zoomIn() {
+            if (timelineZoom.current < timelineZoom.levels.length - 1) {
+                timelineZoom.current++; 
+                updateTimeline();
+            }
+        }
+
+        function zoomOut() {
+            if (timelineZoom.current > 0) {
+                timelineZoom.current--; 
+                updateTimeline();
+            }
+        }
+
+        function updateStatus() {
+            const currentChapter = getCurrentChapter();
+            const completedGoals = currentChapter.goals.filter(goal => goal.completed).length;
+            const totalGoals = currentChapter.goals.length;
+            const progress = totalGoals > 0 ? completedGoals / totalGoals : 0;
+            
+            document.getElementById('current-level').textContent = currentChapter.level;
+            document.getElementById('current-chapter').textContent = currentChapter.name;
+            document.getElementById('progress-fill').style.width = (progress * 100) + '%';
+            document.getElementById('chapter-details').textContent = 
+                `Goals: ${completedGoals}/${totalGoals} completed • Tasks: ${getCurrentTaskStats()}`;
+        }
+
+        function getCurrentTaskStats() {
+            const currentChapter = getCurrentChapter();
+            let completedTasks = 0, totalTasks = 0;
+            currentChapter.goals.forEach(goal => {
+                totalTasks += goal.tasks.length;
+                completedTasks += goal.tasks.filter(task => task.completed).length;
+            });
+            return `${completedTasks}/${totalTasks}`;
+        }
+
+        function openChapterEditor(chapter) {
+            currentEditingChapter = chapter;
+            document.getElementById('chapterName').value = chapter.name;
+            document.getElementById('startDate').value = chapter.startDate;
+            document.getElementById('endDate').value = chapter.endDate;
+            renderGoals();
+            document.getElementById('chapterModal').classList.add('active');
+        }
+
+        function closeChapterEditor() {
+            document.getElementById('chapterModal').classList.remove('active');
+            currentEditingChapter = null;
+        }
+
+        function renderGoals() {
+            const container = document.getElementById('goalsContainer');
+            container.innerHTML = '';
+            
+            currentEditingChapter.goals.forEach(goal => {
+                const goalDiv = document.createElement('div');
+                goalDiv.className = 'goal-item';
+                goalDiv.innerHTML = `
+                    <div class="goal-header">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+                            <input type="checkbox" class="goal-checkbox" ${goal.completed ? 'checked' : ''} 
+                                   onchange="toggleGoalCompletion(${goal.id})">
+                            <input type="text" class="goal-title" value="${goal.title}" 
+                                   onchange="updateGoalTitle(${goal.id}, this.value)">
+                        </div>
+                        <button class="remove-btn" onclick="removeGoal(${goal.id})">-</button>
+                    </div>
+                    <div class="task-list">
+                        <div style="font-weight: bold; color: #7f8c8d; font-size: 12px; margin-bottom: 8px;">
+                            📝 Tasks (${goal.tasks.filter(t => t.completed).length}/${goal.tasks.length} completed)
+                        </div>
+                        ${goal.tasks.map(task => `
+                            <div class="task-item">
+                                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
+                                       onchange="toggleTaskCompletion(${goal.id}, ${task.id})">
+                                <input type="text" class="task-text ${task.completed ? 'completed' : ''}" 
+                                       value="${task.text}" onchange="updateTaskText(${goal.id}, ${task.id}, this.value)">
+                                <button class="remove-btn" onclick="removeTask(${goal.id}, ${task.id})">-</button>
+                            </div>
+                        `).join('')}
+                        <button class="add-btn" onclick="addNewTask(${goal.id})">+</button>
+                    </div>
+                `;
+                container.appendChild(goalDiv);
+            });
+        }
+
+        function addNewGoal() {
+            const newGoal = {
+                id: Date.now(), 
+                title: "New Goal", 
+                completed: false,
+                tasks: [{ id: Date.now() + 1, text: "New task", completed: false }]
+            };
+            currentEditingChapter.goals.push(newGoal);
+            renderGoals();
+        }
+
+        function removeGoal(goalId) {
+            const goal = currentEditingChapter.goals.find(g => g.id === goalId);
+            if (goal && goal.completed) {
+                lifeElements = lifeElements.filter(life => 
+                    !(life.goalTitle === goal.title && life.chapterName === currentEditingChapter.name));
+            }
+            currentEditingChapter.goals = currentEditingChapter.goals.filter(goal => goal.id !== goalId);
+            renderGoals();
+        }
+
+        function updateGoalTitle(goalId, newTitle) {
+            const goal = currentEditingChapter.goals.find(g => g.id === goalId);
+            if (goal) goal.title = newTitle;
+        }
+
+        function toggleGoalCompletion(goalId) {
+            const goal = currentEditingChapter.goals.find(g => g.id === goalId);
+            if (goal) {
+                const wasCompleted = goal.completed;
+                goal.completed = !goal.completed;
+                
+                if (goal.completed) {
+                    goal.tasks.forEach(task => task.completed = true);
+                    if (!wasCompleted) addLifeForCompletedGoal(goal.title, currentEditingChapter.name);
+                } else {
+                    if (wasCompleted) {
+                        lifeElements = lifeElements.filter(life => 
+                            !(life.goalTitle === goal.title && life.chapterName === currentEditingChapter.name));
+                    }
+                }
+                renderGoals();
+            }
+        }
+
+        function addNewTask(goalId) {
+            const goal = currentEditingChapter.goals.find(g => g.id === goalId);
+            if (goal) {
+                goal.tasks.push({ id: Date.now(), text: "New task", completed: false });
+                renderGoals();
+            }
+        }
+
+        function removeTask(goalId, taskId) {
+            const goal = currentEditingChapter.goals.find(g => g.id === goalId);
+            if (goal) {
+                goal.tasks = goal.tasks.filter(task => task.id !== taskId);
+                renderGoals();
+            }
+        }
+
+        function updateTaskText(goalId, taskId, newText) {
+            const goal = currentEditingChapter.goals.find(g => g.id === goalId);
+            if (goal) {
+                const task = goal.tasks.find(t => t.id === taskId);
+                if (task) task.text = newText;
+            }
+        }
+
+        function toggleTaskCompletion(goalId, taskId) {
+            const goal = currentEditingChapter.goals.find(g => g.id === goalId);
+            if (goal) {
+                const task = goal.tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.completed = !task.completed;
+                    const allTasksCompleted = goal.tasks.every(t => t.completed);
+                    const wasGoalCompleted = goal.completed;
+                    
+                    if (allTasksCompleted && goal.tasks.length > 0) {
+                        goal.completed = true;
+                        if (!wasGoalCompleted) addLifeForCompletedGoal(goal.title, currentEditingChapter.name);
+                    } else if (!task.completed) {
+                        if (wasGoalCompleted) {
+                            lifeElements = lifeElements.filter(life => 
+                                !(life.goalTitle === goal.title && life.chapterName === currentEditingChapter.name));
+                        }
+                        goal.completed = false;
+                    }
+                    renderGoals();
+                }
+            }
+        }
+
+        function saveChapterChanges() {
+            currentEditingChapter.name = document.getElementById('chapterName').value;
+            currentEditingChapter.startDate = document.getElementById('startDate').value;
+            currentEditingChapter.endDate = document.getElementById('endDate').value;
+            closeChapterEditor();
+            updateTimeline(); 
+            updateStatus(); 
+            drawMountain();
+            autoSave();
+        }
+
+        function deleteChapter() {
+            if (!currentEditingChapter) return;
+            if (lifeData.chapters.length <= 1) {
+                alert('Cannot delete the last remaining chapter. You must have at least one chapter.');
+                return;
+            }
+            
+            const chapterName = currentEditingChapter.name;
+            if (confirm(`Are you sure you want to delete "${chapterName}"? This action cannot be undone.`)) {
+                // Remove associated life elements
+                lifeElements = lifeElements.filter(life => life.chapterName !== currentEditingChapter.name);
+                
+                lifeData.chapters = lifeData.chapters.filter(chapter => chapter.id !== currentEditingChapter.id);
+                if (lifeData.currentChapter >= lifeData.chapters.length) {
+                    lifeData.currentChapter = lifeData.chapters.length - 1;
+                }
+                closeChapterEditor();
+                updateTimeline(); 
+                updateStatus(); 
+                drawMountain();
+                autoSave();
+            }
+        }
+
+        function addNewChapter() {
+            const today = new Date();
+            const nextMonth = new Date(today);
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            
+            const lastChapter = lifeData.chapters[lifeData.chapters.length - 1];
+            const newChapter = {
+                id: Date.now(), 
+                name: "New Chapter", 
+                level: lifeData.chapters.length + 1,
+                startDate: today.toISOString().split('T')[0],
+                endDate: nextMonth.toISOString().split('T')[0],
+                x: Math.min(lastChapter.x + 100, canvas ? canvas.width - 50 : 750),
+                y: Math.max(lastChapter.y - 50, 100),
+                color: getChapterColor(lifeData.chapters.length),
+                goals: [{
+                    id: Date.now(), 
+                    title: "Main Goal", 
+                    completed: false,
+                    tasks: [{ id: Date.now() + 1, text: "First task", completed: false }]
+                }]
+            };
+            
+            lifeData.chapters.push(newChapter);
+            updateTimeline(); 
+            updateStatus(); 
+            drawMountain();
+            autoSave();
+            openChapterEditor(newChapter);
+        }
+
+        function getChapterColor(index) {
+            const colors = ['#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#e74c3c', '#1abc9c', '#34495e', '#f1c40f'];
+            return colors[index % colors.length];
+        }
+
+        function saveProgress() {
+            const dataStr = JSON.stringify({ lifeData: lifeData, lifeElements: lifeElements }, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url; 
+            link.download = 'life-story-progress.json';
+            link.click(); 
+            URL.revokeObjectURL(url);
+        }
+
+        function loadProgress() {
+            const input = document.createElement('input');
+            input.type = 'file'; 
+            input.accept = '.json';
+            input.onchange = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.lifeData) {
+                                lifeData = data.lifeData;
+                                lifeElements = data.lifeElements || [];
+                            } else {
+                                lifeData = data; 
+                                lifeElements = [];
+                            }
+                            updateTimeline(); 
+                            updateStatus(); 
+                            drawMountain();
+                            autoSave();
+                            alert('Progress loaded successfully!');
+                        } catch (error) {
+                            alert('Invalid file format. Please select a valid life story file.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function setupCanvasClickHandler() {
+            if (canvas) {
+                canvas.addEventListener('click', (event) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+                    
+                    lifeData.chapters.forEach(chapter => {
+                        const distance = Math.sqrt((x - chapter.x) ** 2 + (y - chapter.y) ** 2);
+                        if (distance < 25) openChapterEditor(chapter);
+                    });
+                });
+                
+                canvas.addEventListener('mousemove', (event) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+                    
+                    hoveredLifeElement = null;
+                    lifeElements.forEach(life => {
+                        const distance = Math.sqrt((x - life.x) ** 2 + (y - life.y) ** 2);
+                        if (distance < 15) {
+                            hoveredLifeElement = life;
+                            canvas.style.cursor = 'pointer';
+                        }
+                    });
+                    
+                    if (!hoveredLifeElement) {
+                        let foundChapter = false;
+                        lifeData.chapters.forEach(chapter => {
+                            const distance = Math.sqrt((x - chapter.x) ** 2 + (y - chapter.y) ** 2);
+                            if (distance < 25) {
+                                foundChapter = true;
+                            }
+                        });
+                        canvas.style.cursor = foundChapter ? 'pointer' : 'default';
+                    }
+                });
+                
+                canvas.addEventListener('mouseleave', () => {
+                    hoveredLifeElement = null;
+                    canvas.style.cursor = 'default';
+                });
+            }
+        }
+
+        function animate() {
+            animationFrame++;
+            if (canvas && ctx) drawMountain();
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            if (canvas) resizeCanvas();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            setupCanvasClickHandler();
+        });
+    </script>
+</body>
+</html>
