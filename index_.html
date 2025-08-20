@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Complete Life Story Tool - 2D Mountain</title>
+    <!-- Prevent Safari from loading default favicon.ico -->
+    <link rel="icon" href="data:,">
+    <!-- Multiple favicon formats to prevent Safari from loading default favicon.ico -->
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
+    <link rel="shortcut icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==">
     <style>
         body {
             margin: 0;
@@ -185,33 +191,6 @@
             gap: 20px;
             margin: 30px 0;
             flex-wrap: wrap;
-        }
-        
-        #auth-section {
-            width: 100%;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        #user-info {
-            display: none;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 15px;
-            gap: 10px;
-        }
-        
-        #user-photo {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid #4a4a4a;
-        }
-        
-        #sync-status {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 10px;
         }
         
         .btn {
@@ -396,7 +375,6 @@
             box-shadow: 
                 inset 4px 4px 8px #bebebe,
                 inset -4px -4px 8px #ffffff;
-            box-sizing: border-box;
         }
         
         .form-input:focus {
@@ -655,7 +633,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏔️ Your Life Mountain Game</h1>
+        <h1>Your Game</h1>
         
         <canvas id="mountain-canvas"></canvas>
         
@@ -676,23 +654,9 @@
         </div>
         
         <div class="controls">
-            <div id="auth-section">
-                <button class="btn primary" id="login-btn" onclick="signInWithGoogle()" style="display: none;">
-                    🔐 Login with Google to Save to Cloud
-                </button>
-                <div id="user-info">
-                    <img id="user-photo" alt="User photo">
-                    <span id="user-name"></span>
-                    <button class="btn" onclick="signOut()">Logout</button>
-                </div>
-                <div id="sync-status"></div>
-                <div style="margin-top: 10px; font-size: 11px; color: #666; text-align: center;">
-                    <span id="data-info">🏔️ Journey data: Local storage</span>
-                </div>
-            </div>
             <button class="btn primary" onclick="addNewChapter()">+ New Chapter</button>
-            <button class="btn" onclick="saveProgress()">💾 Download Backup</button>
-            <button class="btn" onclick="loadProgress()">📂 Load from File</button>
+            <button class="btn" onclick="saveProgress()">Save Progress</button>
+            <button class="btn" onclick="loadProgress()">Load Progress</button>
         </div>
         
         <div class="status-info">
@@ -756,7 +720,6 @@
         let isDraggingChapter = false;
         let draggedChapter = null;
         let dragStartX = 0;
-        let auth, db, currentUser = null;
         
         let timelineZoom = {
             levels: ['Day', 'Week', 'Month', 'Quarter', 'Year'],
@@ -764,21 +727,12 @@
             get currentLevel() { return this.levels[this.current]; }
         };
         
-        const lifeTypes = {
-            task: [
-                { emoji: '🌴', name: 'Palm Tree' },
-                { emoji: '🌲', name: 'Pine Tree' },
-                { emoji: '🌳', name: 'Oak Tree' },
-                { emoji: '🎋', name: 'Bamboo' }
-            ],
-            goal: [
-                { emoji: '💎', name: 'Diamond' },
-                { emoji: '👸', name: 'Queen' },
-                { emoji: '🏆', name: 'Trophy' },
-                { emoji: '⭐', name: 'Star' },
-                { emoji: '👑', name: 'Crown' }
-            ]
-        };
+        // Premium life achievement symbols - curated selection
+        const lifeTypes = [
+            { emoji: '💎', name: 'Diamond' },
+            { emoji: '🌴', name: 'Palm Tree' },
+            { emoji: '👸', name: 'Queen' }
+        ];
         
         let lifeData = {
             chapters: [
@@ -806,414 +760,6 @@
             currentChapter: 0
         };
 
-        // Firebase initialization
-        async function initializeFirebase() {
-            try {
-                await loadFirebaseScripts();
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                if (!window.firebase) {
-                    throw new Error('Firebase not loaded');
-                }
-
-                const firebaseConfig = {
-                    apiKey: "AIzaSyBPhg5eD11hfblwG8ZH-Uo6CDPqKxSTOcA",
-                    authDomain: "speed00.firebaseapp.com",
-                    projectId: "speed00",
-                    storageBucket: "speed00.firebasestorage.app",
-                    messagingSenderId: "635012567283",
-                    appId: "1:635012567283:web:c2cf42afdafcd3d7a1e786"
-                };
-
-                firebase.initializeApp(firebaseConfig);
-                auth = firebase.auth();
-                db = firebase.firestore();
-
-                auth.onAuthStateChanged(async (user) => {
-                    currentUser = user;
-                    updateAuthUI();
-                    
-                    // Clean up previous real-time listener
-                    if (window.realtimeUnsubscribe) {
-                        window.realtimeUnsubscribe();
-                    }
-                    
-                    if (user) {
-                        console.log('User signed in:', user.displayName, user.uid);
-                        
-                        // Test Firestore connection
-                        const connectionWorking = await testFirestoreConnection();
-                        if (connectionWorking) {
-                            console.log('Firestore connection verified');
-                            await loadFromCloud();
-                            setupRealtimeListener();
-                        } else {
-                            console.error('Firestore connection failed');
-                            updateSyncStatus('❌ Database connection failed');
-                            loadFromLocal();
-                        }
-                    } else {
-                        console.log('User signed out');
-                        loadFromLocal();
-                    }
-                });
-
-                document.getElementById('login-btn').style.display = 'block';
-                updateSyncStatus('🔥 Firebase ready - click login to sync');
-                
-                // Add a test button for debugging Firestore
-                const testBtn = document.createElement('button');
-                testBtn.textContent = '🧪 Test DB';
-                testBtn.className = 'btn';
-                testBtn.style.fontSize = '12px';
-                testBtn.onclick = async () => {
-                    const result = await testFirestoreConnection();
-                    alert(result ? 'Database connection successful!' : 'Database connection failed!');
-                };
-                document.getElementById('auth-section').appendChild(testBtn);
-                
-            } catch (error) {
-                console.error('Firebase initialization failed:', error);
-                loadFromLocal();
-                document.getElementById('login-btn').style.display = 'none';
-                updateSyncStatus('⚠️ Cloud sync unavailable - using local storage');
-            }
-        }
-
-        function loadFirebaseScripts() {
-            return new Promise((resolve, reject) => {
-                if (window.firebase) {
-                    resolve();
-                    return;
-                }
-
-                let scriptsLoaded = 0;
-                const totalScripts = 3;
-                
-                function checkComplete() {
-                    scriptsLoaded++;
-                    if (scriptsLoaded === totalScripts) {
-                        setTimeout(resolve, 500);
-                    }
-                }
-                
-                const script1 = document.createElement('script');
-                script1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
-                script1.onload = checkComplete;
-                script1.onerror = () => reject(new Error('Failed to load Firebase App'));
-                document.head.appendChild(script1);
-                
-                const script2 = document.createElement('script');
-                script2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
-                script2.onload = checkComplete;
-                script2.onerror = () => reject(new Error('Failed to load Firebase Auth'));
-                document.head.appendChild(script2);
-                
-                const script3 = document.createElement('script');
-                script3.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
-                script3.onload = checkComplete;
-                script3.onerror = () => reject(new Error('Failed to load Firebase Firestore'));
-                document.head.appendChild(script3);
-            });
-        }
-
-        async function signInWithGoogle() {
-            try {
-                updateSyncStatus('🔄 Attempting Google sign-in...');
-                
-                if (!auth) {
-                    throw new Error('Firebase Auth not initialized');
-                }
-                
-                const provider = new firebase.auth.GoogleAuthProvider();
-                provider.addScope('email');
-                provider.addScope('profile');
-                provider.setCustomParameters({
-                    prompt: 'select_account'
-                });
-                
-                const result = await auth.signInWithPopup(provider);
-                console.log('Sign-in successful:', result.user.displayName);
-                updateSyncStatus('✅ Signed in successfully!');
-                
-            } catch (error) {
-                console.error('Sign-in error:', error);
-                let errorMessage = 'Sign in failed. ';
-                
-                switch (error.code) {
-                    case 'auth/popup-closed-by-user':
-                        errorMessage += 'Popup was closed before sign-in completed.';
-                        break;
-                    case 'auth/popup-blocked':
-                        errorMessage += 'Popup was blocked by your browser. Please allow popups.';
-                        break;
-                    case 'auth/cancelled-popup-request':
-                        errorMessage += 'Another popup is already open.';
-                        break;
-                    default:
-                        errorMessage += `Error: ${error.message}`;
-                }
-                
-                alert(errorMessage);
-                updateSyncStatus('❌ Sign-in failed');
-            }
-        }
-
-        async function signOut() {
-            try {
-                // Clean up real-time listener
-                if (window.realtimeUnsubscribe) {
-                    window.realtimeUnsubscribe();
-                }
-                
-                await auth.signOut();
-                console.log('Signed out successfully');
-                updateSyncStatus('Signed out - data saved locally 💾');
-            } catch (error) {
-                console.error('Sign out failed:', error);
-            }
-        }
-
-        function updateAuthUI() {
-            const loginBtn = document.getElementById('login-btn');
-            const userInfo = document.getElementById('user-info');
-            const userPhoto = document.getElementById('user-photo');
-            const userName = document.getElementById('user-name');
-            const dataInfo = document.getElementById('data-info');
-
-            if (currentUser) {
-                loginBtn.style.display = 'none';
-                userInfo.style.display = 'flex';
-                userPhoto.src = currentUser.photoURL || '';
-                userName.textContent = currentUser.displayName || currentUser.email;
-                updateSyncStatus('✅ Synced to cloud');
-                
-                if (dataInfo) {
-                    dataInfo.textContent = `☁️ Journey data: Cloud (${lifeData.chapters.length} chapters, ${lifeElements.length} life elements)`;
-                }
-            } else {
-                loginBtn.style.display = 'block';
-                userInfo.style.display = 'none';
-                updateSyncStatus('💾 Saved locally');
-                
-                if (dataInfo) {
-                    dataInfo.textContent = `🏔️ Journey data: Local storage (${lifeData.chapters.length} chapters, ${lifeElements.length} life elements)`;
-                }
-            }
-        }
-
-        function updateSyncStatus(message) {
-            const statusEl = document.getElementById('sync-status');
-            if (statusEl) {
-                statusEl.textContent = message;
-                setTimeout(() => {
-                    if (statusEl.textContent === message) {
-                        statusEl.textContent = currentUser ? '☁️ Cloud sync active' : '💾 Local storage';
-                    }
-                }, 3000);
-            }
-        }
-
-        async function saveToCloud() {
-            if (!currentUser || !db) return false;
-            
-            try {
-                updateSyncStatus('💾 Saving to cloud...');
-                
-                const saveData = {
-                    lifeData: lifeData,
-                    lifeElements: lifeElements,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-                    userId: currentUser.uid,
-                    userEmail: currentUser.email,
-                    version: '1.0'
-                };
-                
-                // Use merge: true to update existing document or create new one
-                await db.collection('lifeMountainData').doc(currentUser.uid).set(saveData, { merge: true });
-                
-                console.log('Progress saved to Firestore successfully');
-                console.log('Data saved:', {
-                    chapters: lifeData.chapters.length,
-                    lifeElements: lifeElements.length,
-                    userId: currentUser.uid
-                });
-                
-                updateSyncStatus('✅ Saved to cloud');
-                return true;
-            } catch (error) {
-                console.error('Failed to save to cloud:', error);
-                console.error('Error details:', {
-                    code: error.code,
-                    message: error.message,
-                    userId: currentUser?.uid
-                });
-                updateSyncStatus('❌ Cloud save failed: ' + error.message);
-                return false;
-            }
-        }
-
-        async function loadFromCloud() {
-            if (!currentUser || !db) return false;
-            
-            try {
-                updateSyncStatus('📥 Loading from cloud...');
-                
-                console.log('Attempting to load data for user:', currentUser.uid);
-                const doc = await db.collection('lifeMountainData').doc(currentUser.uid).get();
-                
-                if (doc.exists) {
-                    const data = doc.data();
-                    console.log('Cloud data found:', {
-                        hasLifeData: !!data.lifeData,
-                        hasLifeElements: !!data.lifeElements,
-                        lastUpdated: data.lastUpdated,
-                        chaptersCount: data.lifeData?.chapters?.length || 0
-                    });
-                    
-                    // Validate data structure before loading
-                    if (data.lifeData && data.lifeData.chapters && Array.isArray(data.lifeData.chapters)) {
-                        lifeData = data.lifeData;
-                        lifeElements = data.lifeElements || [];
-                        
-                        updateTimeline();
-                        updateStatus();
-                        drawMountain();
-                        
-                        console.log('Progress loaded from cloud successfully');
-                        updateSyncStatus('✅ Loaded from cloud');
-                        return true;
-                    } else {
-                        console.warn('Invalid data structure in cloud, using defaults');
-                        updateSyncStatus('⚠️ Invalid cloud data, using defaults');
-                        await saveToCloud(); // Save current defaults to cloud
-                    }
-                } else {
-                    console.log('No cloud data found for user, will save current state');
-                    updateSyncStatus('📤 No cloud data - saving current state');
-                    await saveToCloud(); // Save current state as initial data
-                }
-            } catch (error) {
-                console.error('Failed to load from cloud:', error);
-                console.error('Error details:', {
-                    code: error.code,
-                    message: error.message,
-                    userId: currentUser?.uid
-                });
-                updateSyncStatus('❌ Cloud load failed: ' + error.message);
-            }
-            return false;
-        }
-
-        // Real-time listener for data changes (optional - for multi-device sync)
-        function setupRealtimeListener() {
-            if (!currentUser || !db) return;
-            
-            const unsubscribe = db.collection('lifeMountainData').doc(currentUser.uid)
-                .onSnapshot((doc) => {
-                    if (doc.exists && !isDraggingChapter && !currentEditingChapter) {
-                        const data = doc.data();
-                        const cloudTimestamp = data.lastUpdated?.toDate?.() || new Date(data.lastUpdated);
-                        const localTimestamp = new Date(localStorage.getItem('lastLocalUpdate') || 0);
-                        
-                        // Only update if cloud data is newer
-                        if (cloudTimestamp > localTimestamp) {
-                            console.log('Real-time update received from cloud');
-                            if (data.lifeData && data.lifeData.chapters) {
-                                lifeData = data.lifeData;
-                                lifeElements = data.lifeElements || [];
-                                updateTimeline();
-                                updateStatus();
-                                drawMountain();
-                                updateSyncStatus('🔄 Updated from cloud');
-                            }
-                        }
-                    }
-                }, (error) => {
-                    console.error('Real-time listener error:', error);
-                });
-            
-            // Store unsubscribe function to clean up later
-            window.realtimeUnsubscribe = unsubscribe;
-        }
-
-        // Test Firestore connection
-        async function testFirestoreConnection() {
-            if (!db) {
-                console.error('Firestore not initialized');
-                return false;
-            }
-            
-            try {
-                // Test write
-                const testRef = db.collection('test').doc('connection');
-                await testRef.set({ 
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    test: 'Connection successful'
-                });
-                
-                // Test read
-                const testDoc = await testRef.get();
-                console.log('Firestore connection test successful:', testDoc.data());
-                
-                // Clean up test document
-                await testRef.delete();
-                
-                return true;
-            } catch (error) {
-                console.error('Firestore connection test failed:', error);
-                return false;
-            }
-        }
-
-        function saveToLocal() {
-            try {
-                const saveData = {
-                    lifeData: lifeData,
-                    lifeElements: lifeElements,
-                    lastUpdated: new Date().toISOString()
-                };
-                localStorage.setItem('lifeMountainData', JSON.stringify(saveData));
-                console.log('Progress saved locally');
-            } catch (error) {
-                console.error('Failed to save locally:', error);
-            }
-        }
-
-        function loadFromLocal() {
-            try {
-                const savedData = localStorage.getItem('lifeMountainData');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    lifeData = data.lifeData || lifeData;
-                    lifeElements = data.lifeElements || [];
-                    updateTimeline();
-                    updateStatus();
-                    drawMountain();
-                    console.log('Progress loaded from local storage');
-                    updateSyncStatus('💾 Loaded from local storage');
-                }
-            } catch (error) {
-                console.error('Failed to load from local storage:', error);
-            }
-        }
-
-        async function autoSave() {
-            // Update local timestamp
-            localStorage.setItem('lastLocalUpdate', new Date().toISOString());
-            
-            if (currentUser) {
-                const success = await saveToCloud();
-                if (!success) {
-                    // Fallback to local storage if cloud save fails
-                    saveToLocal();
-                    updateSyncStatus('⚠️ Saved locally (cloud failed)');
-                }
-            } else {
-                saveToLocal();
-            }
-        }
-
         function init() {
             canvas = document.getElementById('mountain-canvas');
             ctx = canvas.getContext('2d');
@@ -1222,7 +768,6 @@
             animate();
             updateTimeline();
             updateStatus();
-            initializeFirebase();
         }
 
         function resizeCanvas() {
@@ -1387,51 +932,69 @@
             ctx.fill();
         }
 
-        function generateLifeElement(title, chapterName, type = 'goal') {
-            const lifeTypeArray = lifeTypes[type] || lifeTypes.goal;
-            const lifeElementsOfType = lifeElements.filter(el => el.type === type);
-            const lifeType = lifeTypeArray[lifeElementsOfType.length % lifeTypeArray.length];
-            
+        function generateLifeElement(goalTitle, chapterName) {
+            const lifeType = lifeTypes[lifeElements.length % lifeTypes.length];
             const canvasWidth = canvas ? canvas.width : 800;
             const canvasHeight = canvas ? canvas.height : 500;
             
-            // Goals appear higher on the mountain (more prestigious)
-            const baseY = type === 'goal' 
-                ? canvasHeight * 0.5 + Math.random() * (canvasHeight * 0.15)  // Higher up (50-65%)
-                : canvasHeight * 0.65 + Math.random() * (canvasHeight * 0.15); // Lower down (65-80%)
+            // Find the chapter this life element belongs to
+            const chapter = lifeData.chapters.find(c => c.name === chapterName);
+            let baseX = chapter ? chapter.x : canvasWidth / 2;
+            let baseY = chapter ? chapter.y : canvasHeight * 0.7;
+            
+            // Calculate mountain surface height at the chapter's X position
+            // Mountain peaks: width * 0.2 -> height * 0.8, width * 0.4 -> height * 0.6, etc.
+            const mountainSurfaceY = getMountainHeightAtX(baseX, canvasWidth, canvasHeight);
+            
+            // Place life elements on or slightly below the mountain surface, near the chapter
+            const offsetX = (Math.random() - 0.5) * 80; // Spread around chapter position
+            const offsetY = Math.random() * 20 + 10; // Slightly below mountain surface
             
             return {
                 id: Date.now() + Math.random(),
                 emoji: lifeType.emoji,
                 name: lifeType.name,
-                title: title,
+                goalTitle: goalTitle,
                 chapterName: chapterName,
-                type: type, // 'task' or 'goal'
-                x: Math.random() * (canvasWidth - 100) + 50,
-                y: baseY,
-                scale: type === 'goal' ? 1.0 + Math.random() * 0.3 : 0.8 + Math.random() * 0.3, // Goals are bigger
+                x: Math.max(30, Math.min(canvasWidth - 30, baseX + offsetX)),
+                y: mountainSurfaceY + offsetY,
+                scale: 0.8 + Math.random() * 0.4,
                 rotation: Math.random() * 0.4 - 0.2,
                 bobOffset: Math.random() * Math.PI * 2
             };
         }
         
+        function getMountainHeightAtX(x, canvasWidth, canvasHeight) {
+            // Calculate mountain height at specific X position based on the mountain shape
+            const normalizedX = x / canvasWidth;
+            
+            // Mountain peaks defined in drawMountainShape
+            const peaks = [
+                {x: 0, y: 1}, 
+                {x: 0.2, y: 0.8}, 
+                {x: 0.4, y: 0.6},
+                {x: 0.6, y: 0.4}, 
+                {x: 0.8, y: 0.25}, 
+                {x: 1, y: 0.2}
+            ];
+            
+            // Find which segment the X position falls into
+            for (let i = 0; i < peaks.length - 1; i++) {
+                if (normalizedX >= peaks[i].x && normalizedX <= peaks[i + 1].x) {
+                    // Linear interpolation between two peaks
+                    const t = (normalizedX - peaks[i].x) / (peaks[i + 1].x - peaks[i].x);
+                    const interpolatedY = peaks[i].y + t * (peaks[i + 1].y - peaks[i].y);
+                    return interpolatedY * canvasHeight;
+                }
+            }
+            
+            // Fallback
+            return canvasHeight * 0.8;
+        }
+        
         function addLifeForCompletedGoal(goalTitle, chapterName) {
-            const newLife = generateLifeElement(goalTitle, chapterName, 'goal');
+            const newLife = generateLifeElement(goalTitle, chapterName);
             lifeElements.push(newLife);
-        }
-        
-        function addLifeForCompletedTask(taskTitle, chapterName) {
-            const newLife = generateLifeElement(taskTitle, chapterName, 'task');
-            lifeElements.push(newLife);
-        }
-        
-        function removeLifeElement(title, chapterName, type = null) {
-            lifeElements = lifeElements.filter(life => {
-                const titleMatch = life.title === title || life.goalTitle === title;
-                const chapterMatch = life.chapterName === chapterName;
-                const typeMatch = type ? life.type === type : true;
-                return !(titleMatch && chapterMatch && typeMatch);
-            });
         }
         
         function drawLifeElements() {
@@ -1451,28 +1014,16 @@
         function drawLifeTooltip() {
             if (hoveredLifeElement) {
                 const life = hoveredLifeElement;
-                const tooltipText = life.title || life.goalTitle || life.name;
-                const typeText = life.type === 'goal' ? '🎯 Goal' : '📝 Task';
-                
+                const tooltipText = life.goalTitle;
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                 ctx.font = '12px Arial';
-                const textWidth = Math.max(
-                    ctx.measureText(tooltipText).width,
-                    ctx.measureText(typeText).width
-                );
+                const textWidth = ctx.measureText(tooltipText).width;
                 const tooltipX = life.x - textWidth / 2 - 8;
-                const tooltipY = life.y - 45;
-                
-                // Background
-                ctx.fillRect(tooltipX, tooltipY - 20, textWidth + 16, 35);
-                
-                // Text
+                const tooltipY = life.y - 35;
+                ctx.fillRect(tooltipX, tooltipY - 15, textWidth + 16, 20);
                 ctx.fillStyle = 'white';
                 ctx.textAlign = 'center';
-                ctx.font = '10px Arial';
-                ctx.fillText(typeText, life.x, tooltipY - 10);
-                ctx.font = 'bold 12px Arial';
-                ctx.fillText(tooltipText, life.x, tooltipY + 5);
+                ctx.fillText(tooltipText, life.x, tooltipY - 5);
             }
         }
 
@@ -1526,6 +1077,7 @@
                     break;
             }
             
+            // Store timeline calculation data for drag operations
             timelineContent.dataset.startDate = startDate.getTime();
             timelineContent.dataset.unitWidth = unitWidth;
             timelineContent.dataset.totalUnits = totalUnits;
@@ -1588,9 +1140,11 @@
                     block.textContent = chapter.name;
                     block.style.cursor = 'grab';
                     
+                    // Store chapter data for dragging
                     block.dataset.chapterId = chapter.id;
                     block.dataset.originalWidth = width;
                     
+                    // Add drag functionality
                     block.addEventListener('mousedown', startDragging);
                     block.addEventListener('click', (e) => {
                         if (!isDraggingChapter) {
@@ -1603,7 +1157,58 @@
                 }
             });
             
+            // Add timeline drag listeners
             setupTimelineDragListeners();
+            
+            // Add current day marker (red vertical line)
+            addCurrentDayMarker(startDate, unitWidth, timelineWidth);
+        }
+
+        function addCurrentDayMarker(startDate, unitWidth, timelineWidth) {
+            const timelineContent = document.getElementById('timeline-content');
+            const today = new Date();
+            let todayPosition;
+            
+            switch (timelineZoom.currentLevel) {
+                case 'Day':
+                    todayPosition = ((today - startDate) / (24 * 60 * 60 * 1000)) * unitWidth;
+                    break;
+                case 'Week':
+                    todayPosition = ((today - startDate) / (7 * 24 * 60 * 60 * 1000)) * unitWidth;
+                    break;
+                case 'Month':
+                    const todayMonths = (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth());
+                    const dayProgress = today.getDate() / new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                    todayPosition = (todayMonths + dayProgress) * unitWidth;
+                    break;
+                case 'Quarter':
+                    const todayQuarters = (today.getFullYear() - startDate.getFullYear()) * 4 + Math.floor(today.getMonth() / 3);
+                    const quarterProgress = (today.getMonth() % 3) / 3 + (today.getDate() - 1) / (new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() * 3);
+                    todayPosition = (todayQuarters + quarterProgress) * unitWidth;
+                    break;
+                case 'Year':
+                    const todayYears = today.getFullYear() - startDate.getFullYear();
+                    const yearProgress = (today.getMonth() + (today.getDate() - 1) / new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()) / 12;
+                    todayPosition = (todayYears + yearProgress) * unitWidth;
+                    break;
+            }
+            
+            // Only show marker if it's within the visible timeline
+            if (todayPosition >= 0 && todayPosition <= timelineWidth) {
+                const todayMarker = document.createElement('div');
+                todayMarker.className = 'current-day-marker';
+                todayMarker.style.cssText = `
+                    position: absolute;
+                    left: ${todayPosition}px;
+                    top: 0;
+                    bottom: 0;
+                    width: 2px;
+                    background-color: #e74c3c;
+                    z-index: 100;
+                    pointer-events: none;
+                `;
+                timelineContent.appendChild(todayMarker);
+            }
         }
 
         function startDragging(e) {
@@ -1628,6 +1233,7 @@
                     const weekIndex = Math.round(mouseX / unitWidth);
                     snapPosition = weekIndex * unitWidth;
                     newStartDate = new Date(startDate.getTime() + weekIndex * 7 * 24 * 60 * 60 * 1000);
+                    // Snap to start of week (Monday)
                     const dayOfWeek = newStartDate.getDay();
                     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
                     newStartDate.setDate(newStartDate.getDate() + mondayOffset);
@@ -1669,20 +1275,25 @@
                     const { snapPosition, newStartDate } = snapToTimelineGrid(mouseX, timelineLevel, unitWidth, startDate);
                     
                     if (newStartDate) {
+                        // Calculate chapter duration in days
                         const originalStart = new Date(draggedChapter.startDate);
                         const originalEnd = new Date(draggedChapter.endDate);
                         const durationDays = Math.round((originalEnd - originalStart) / (24 * 60 * 60 * 1000));
                         
+                        // Calculate new end date maintaining duration
                         const newEndDate = new Date(newStartDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
                         
+                        // Update chapter dates
                         draggedChapter.startDate = newStartDate.toISOString().split('T')[0];
                         draggedChapter.endDate = newEndDate.toISOString().split('T')[0];
                         
+                        // Update visual position with snapping
                         const block = e.target.closest('.chapter-timeline-block');
                         if (block) {
                             block.style.left = Math.max(0, snapPosition) + 'px';
                         }
                         
+                        // Update status if this is the current chapter
                         updateStatus();
                         drawMountain();
                     }
@@ -1693,11 +1304,12 @@
                 if (isDraggingChapter) {
                     isDraggingChapter = false;
                     if (draggedChapter) {
+                        // Final update with snapping
                         updateTimeline();
                         updateStatus();
                         drawMountain();
-                        autoSave();
                         
+                        // Update editor if it's open for this chapter
                         if (currentEditingChapter && currentEditingChapter.id === draggedChapter.id) {
                             document.getElementById('startDate').value = draggedChapter.startDate;
                             document.getElementById('endDate').value = draggedChapter.endDate;
@@ -1705,6 +1317,7 @@
                     }
                     draggedChapter = null;
                     
+                    // Reset cursor
                     const blocks = document.querySelectorAll('.chapter-timeline-block');
                     blocks.forEach(block => {
                         block.style.cursor = 'grab';
@@ -1713,10 +1326,11 @@
                 }
             });
             
+            // Handle mouse leaving timeline area
             timeline.addEventListener('mouseleave', (e) => {
                 if (isDraggingChapter) {
                     isDraggingChapter = false;
-                    updateTimeline();
+                    updateTimeline(); // Reset to proper positions
                     draggedChapter = null;
                 }
             });
@@ -1728,17 +1342,20 @@
             return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
         }
 
+        function updateTimelineBlockPosition(block, mouseX, unitWidth) {
+            const newLeft = Math.max(0, mouseX - parseFloat(block.dataset.originalWidth) / 2);
+            block.style.left = newLeft + 'px';
+        }
+
         function zoomIn() {
             if (timelineZoom.current < timelineZoom.levels.length - 1) {
-                timelineZoom.current++; 
-                updateTimeline();
+                timelineZoom.current++; updateTimeline();
             }
         }
 
         function zoomOut() {
             if (timelineZoom.current > 0) {
-                timelineZoom.current--; 
-                updateTimeline();
+                timelineZoom.current--; updateTimeline();
             }
         }
 
@@ -1818,9 +1435,7 @@
 
         function addNewGoal() {
             const newGoal = {
-                id: Date.now(), 
-                title: "New Goal", 
-                completed: false,
+                id: Date.now(), title: "New Goal", completed: false,
                 tasks: [{ id: Date.now() + 1, text: "New task", completed: false }]
             };
             currentEditingChapter.goals.push(newGoal);
@@ -1828,17 +1443,8 @@
         }
 
         function removeGoal(goalId) {
-            const goal = currentEditingChapter.goals.find(g => g.id === goalId);
-            if (goal) {
-                // Remove all associated life elements (both goal and tasks)
-                removeLifeElement(goal.title, currentEditingChapter.name, 'goal');
-                goal.tasks.forEach(task => {
-                    removeLifeElement(task.text, currentEditingChapter.name, 'task');
-                });
-            }
             currentEditingChapter.goals = currentEditingChapter.goals.filter(goal => goal.id !== goalId);
             renderGoals();
-            autoSave();
         }
 
         function updateGoalTitle(goalId, newTitle) {
@@ -1853,18 +1459,15 @@
                 goal.completed = !goal.completed;
                 
                 if (goal.completed) {
-                    // Mark all tasks as completed when goal is completed
                     goal.tasks.forEach(task => task.completed = true);
-                    // Add goal life element (diamond/queen)
                     if (!wasCompleted) addLifeForCompletedGoal(goal.title, currentEditingChapter.name);
                 } else {
-                    // Remove goal life element when uncompleted
                     if (wasCompleted) {
-                        removeLifeElement(goal.title, currentEditingChapter.name, 'goal');
+                        lifeElements = lifeElements.filter(life => 
+                            !(life.goalTitle === goal.title && life.chapterName === currentEditingChapter.name));
                     }
                 }
                 renderGoals();
-                autoSave();
             }
         }
 
@@ -1879,23 +1482,8 @@
         function removeTask(goalId, taskId) {
             const goal = currentEditingChapter.goals.find(g => g.id === goalId);
             if (goal) {
-                const task = goal.tasks.find(t => t.id === taskId);
-                if (task && task.completed) {
-                    // Remove associated palm tree if task was completed
-                    removeLifeElement(task.text, currentEditingChapter.name, 'task');
-                }
-                
                 goal.tasks = goal.tasks.filter(task => task.id !== taskId);
-                
-                // Check if goal should still be completed after task removal
-                const allTasksCompleted = goal.tasks.length > 0 && goal.tasks.every(t => t.completed);
-                if (!allTasksCompleted && goal.completed) {
-                    goal.completed = false;
-                    removeLifeElement(goal.title, currentEditingChapter.name, 'goal');
-                }
-                
                 renderGoals();
-                autoSave();
             }
         }
 
@@ -1912,34 +1500,21 @@
             if (goal) {
                 const task = goal.tasks.find(t => t.id === taskId);
                 if (task) {
-                    const wasTaskCompleted = task.completed;
                     task.completed = !task.completed;
-                    
-                    // Handle task life element (palm tree)
-                    if (task.completed && !wasTaskCompleted) {
-                        // Task just completed - add palm tree
-                        addLifeForCompletedTask(task.text, currentEditingChapter.name);
-                    } else if (!task.completed && wasTaskCompleted) {
-                        // Task uncompleted - remove palm tree
-                        removeLifeElement(task.text, currentEditingChapter.name, 'task');
-                    }
-                    
                     const allTasksCompleted = goal.tasks.every(t => t.completed);
                     const wasGoalCompleted = goal.completed;
                     
-                    // Handle goal completion based on all tasks
-                    if (allTasksCompleted && goal.tasks.length > 0 && !wasGoalCompleted) {
-                        // All tasks completed - auto-complete goal and add diamond/queen
+                    if (allTasksCompleted && goal.tasks.length > 0) {
                         goal.completed = true;
-                        addLifeForCompletedGoal(goal.title, currentEditingChapter.name);
-                    } else if (!allTasksCompleted && wasGoalCompleted) {
-                        // Not all tasks completed - uncomplete goal and remove diamond/queen
+                        if (!wasGoalCompleted) addLifeForCompletedGoal(goal.title, currentEditingChapter.name);
+                    } else if (!task.completed) {
+                        if (wasGoalCompleted) {
+                            lifeElements = lifeElements.filter(life => 
+                                !(life.goalTitle === goal.title && life.chapterName === currentEditingChapter.name));
+                        }
                         goal.completed = false;
-                        removeLifeElement(goal.title, currentEditingChapter.name, 'goal');
                     }
-                    
                     renderGoals();
-                    autoSave();
                 }
             }
         }
@@ -1949,10 +1524,7 @@
             currentEditingChapter.startDate = document.getElementById('startDate').value;
             currentEditingChapter.endDate = document.getElementById('endDate').value;
             closeChapterEditor();
-            updateTimeline(); 
-            updateStatus(); 
-            drawMountain();
-            autoSave();
+            updateTimeline(); updateStatus(); drawMountain();
         }
 
         function deleteChapter() {
@@ -1964,18 +1536,12 @@
             
             const chapterName = currentEditingChapter.name;
             if (confirm(`Are you sure you want to delete "${chapterName}"? This action cannot be undone.`)) {
-                // Remove all associated life elements from this chapter
-                lifeElements = lifeElements.filter(life => life.chapterName !== currentEditingChapter.name);
-                
                 lifeData.chapters = lifeData.chapters.filter(chapter => chapter.id !== currentEditingChapter.id);
                 if (lifeData.currentChapter >= lifeData.chapters.length) {
                     lifeData.currentChapter = lifeData.chapters.length - 1;
                 }
                 closeChapterEditor();
-                updateTimeline(); 
-                updateStatus(); 
-                drawMountain();
-                autoSave();
+                updateTimeline(); updateStatus(); drawMountain();
             }
         }
 
@@ -1986,27 +1552,20 @@
             
             const lastChapter = lifeData.chapters[lifeData.chapters.length - 1];
             const newChapter = {
-                id: Date.now(), 
-                name: "New Chapter", 
-                level: lifeData.chapters.length + 1,
+                id: Date.now(), name: "New Chapter", level: lifeData.chapters.length + 1,
                 startDate: today.toISOString().split('T')[0],
                 endDate: nextMonth.toISOString().split('T')[0],
                 x: Math.min(lastChapter.x + 100, canvas ? canvas.width - 50 : 750),
                 y: Math.max(lastChapter.y - 50, 100),
                 color: getChapterColor(lifeData.chapters.length),
                 goals: [{
-                    id: Date.now(), 
-                    title: "Main Goal", 
-                    completed: false,
+                    id: Date.now(), title: "Main Goal", completed: false,
                     tasks: [{ id: Date.now() + 1, text: "First task", completed: false }]
                 }]
             };
             
             lifeData.chapters.push(newChapter);
-            updateTimeline(); 
-            updateStatus(); 
-            drawMountain();
-            autoSave();
+            updateTimeline(); updateStatus(); drawMountain();
             openChapterEditor(newChapter);
         }
 
@@ -2015,21 +1574,45 @@
             return colors[index % colors.length];
         }
 
+        function resetJourney() {
+            if (confirm('Are you sure you want to reset your entire journey? This cannot be undone.')) {
+                const today = new Date();
+                const nextMonth = new Date(today);
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                
+                lifeData = {
+                    chapters: [{
+                        id: 1, name: "Starting Journey", level: 1,
+                        startDate: today.toISOString().split('T')[0],
+                        endDate: nextMonth.toISOString().split('T')[0],
+                        x: 50, y: 400, color: "#667eea",
+                        goals: [{
+                            id: 1, title: "Set Life Direction", completed: false,
+                            tasks: [
+                                { id: 1, text: "Define personal values", completed: false },
+                                { id: 2, text: "Set 5-year vision", completed: false }
+                            ]
+                        }]
+                    }],
+                    currentLevel: 1, currentChapter: 0
+                };
+                lifeElements = [];
+                updateTimeline(); updateStatus(); drawMountain();
+            }
+        }
+
         function saveProgress() {
             const dataStr = JSON.stringify({ lifeData: lifeData, lifeElements: lifeElements }, null, 2);
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
-            link.href = url; 
-            link.download = 'life-story-progress.json';
-            link.click(); 
-            URL.revokeObjectURL(url);
+            link.href = url; link.download = 'life-story-progress.json';
+            link.click(); URL.revokeObjectURL(url);
         }
 
         function loadProgress() {
             const input = document.createElement('input');
-            input.type = 'file'; 
-            input.accept = '.json';
+            input.type = 'file'; input.accept = '.json';
             input.onchange = (event) => {
                 const file = event.target.files[0];
                 if (file) {
@@ -2041,14 +1624,9 @@
                                 lifeData = data.lifeData;
                                 lifeElements = data.lifeElements || [];
                             } else {
-                                lifeData = data; 
-                                lifeElements = [];
+                                lifeData = data; lifeElements = [];
                             }
-                            updateTimeline(); 
-                            updateStatus(); 
-                            drawMountain();
-                            autoSave();
-                            alert('Progress loaded successfully!');
+                            updateTimeline(); updateStatus(); drawMountain();
                         } catch (error) {
                             alert('Invalid file format. Please select a valid life story file.');
                         }
@@ -2086,16 +1664,7 @@
                         }
                     });
                     
-                    if (!hoveredLifeElement) {
-                        let foundChapter = false;
-                        lifeData.chapters.forEach(chapter => {
-                            const distance = Math.sqrt((x - chapter.x) ** 2 + (y - chapter.y) ** 2);
-                            if (distance < 25) {
-                                foundChapter = true;
-                            }
-                        });
-                        canvas.style.cursor = foundChapter ? 'pointer' : 'default';
-                    }
+                    if (!hoveredLifeElement) canvas.style.cursor = 'default';
                 });
                 
                 canvas.addEventListener('mouseleave', () => {
