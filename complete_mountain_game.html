@@ -686,6 +686,9 @@
                     <button class="btn" onclick="signOut()">Logout</button>
                 </div>
                 <div id="sync-status"></div>
+                <div style="margin-top: 10px; font-size: 11px; color: #666; text-align: center;">
+                    <span id="data-info">🏔️ Journey data: Local storage</span>
+                </div>
             </div>
             <button class="btn primary" onclick="addNewChapter()">+ New Chapter</button>
             <button class="btn" onclick="saveProgress()">💾 Download Backup</button>
@@ -821,18 +824,48 @@
                 auth = firebase.auth();
                 db = firebase.firestore();
 
-                auth.onAuthStateChanged((user) => {
+                auth.onAuthStateChanged(async (user) => {
                     currentUser = user;
                     updateAuthUI();
+                    
+                    // Clean up previous real-time listener
+                    if (window.realtimeUnsubscribe) {
+                        window.realtimeUnsubscribe();
+                    }
+                    
                     if (user) {
-                        loadFromCloud();
+                        console.log('User signed in:', user.displayName, user.uid);
+                        
+                        // Test Firestore connection
+                        const connectionWorking = await testFirestoreConnection();
+                        if (connectionWorking) {
+                            console.log('Firestore connection verified');
+                            await loadFromCloud();
+                            setupRealtimeListener();
+                        } else {
+                            console.error('Firestore connection failed');
+                            updateSyncStatus('❌ Database connection failed');
+                            loadFromLocal();
+                        }
                     } else {
+                        console.log('User signed out');
                         loadFromLocal();
                     }
                 });
 
                 document.getElementById('login-btn').style.display = 'block';
                 updateSyncStatus('🔥 Firebase ready - click login to sync');
+                
+                // Add a test button for debugging Firestore
+                const testBtn = document.createElement('button');
+                testBtn.textContent = '🧪 Test DB';
+                testBtn.className = 'btn';
+                testBtn.style.fontSize = '12px';
+                testBtn.onclick = async () => {
+                    const result = await testFirestoreConnection();
+                    alert(result ? 'Database connection successful!' : 'Database connection failed!');
+                };
+                document.getElementById('auth-section').appendChild(testBtn);
                 
             } catch (error) {
                 console.error('Firebase initialization failed:', error);
@@ -923,6 +956,11 @@
 
         async function signOut() {
             try {
+                // Clean up real-time listener
+                if (window.realtimeUnsubscribe) {
+                    window.realtimeUnsubscribe();
+                }
+                
                 await auth.signOut();
                 console.log('Signed out successfully');
                 updateSyncStatus('Signed out - data saved locally 💾');
@@ -966,19 +1004,37 @@
             if (!currentUser || !db) return false;
             
             try {
+                updateSyncStatus('💾 Saving to cloud...');
+                
                 const saveData = {
                     lifeData: lifeData,
                     lifeElements: lifeElements,
-                    lastUpdated: new Date().toISOString()
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    version: '1.0'
                 };
                 
-                await db.collection('lifeMountainData').doc(currentUser.uid).set(saveData);
-                console.log('Progress saved to cloud successfully');
+                // Use merge: true to update existing document or create new one
+                await db.collection('lifeMountainData').doc(currentUser.uid).set(saveData, { merge: true });
+                
+                console.log('Progress saved to Firestore successfully');
+                console.log('Data saved:', {
+                    chapters: lifeData.chapters.length,
+                    lifeElements: lifeElements.length,
+                    userId: currentUser.uid
+                });
+                
                 updateSyncStatus('✅ Saved to cloud');
                 return true;
             } catch (error) {
                 console.error('Failed to save to cloud:', error);
-                updateSyncStatus('❌ Cloud save failed');
+                console.error('Error details:', {
+                    code: error.code,
+                    message: error.message,
+                    userId: currentUser?.uid
+                });
+                updateSyncStatus('❌ Cloud save failed: ' + error.message);
                 return false;
             }
         }
@@ -987,26 +1043,113 @@
             if (!currentUser || !db) return false;
             
             try {
+                updateSyncStatus('📥 Loading from cloud...');
+                
+                console.log('Attempting to load data for user:', currentUser.uid);
                 const doc = await db.collection('lifeMountainData').doc(currentUser.uid).get();
                 
                 if (doc.exists) {
                     const data = doc.data();
-                    lifeData = data.lifeData;
-                    lifeElements = data.lifeElements || [];
-                    updateTimeline();
-                    updateStatus();
-                    drawMountain();
-                    console.log('Progress loaded from cloud successfully');
-                    updateSyncStatus('✅ Loaded from cloud');
-                    return true;
+                    console.log('Cloud data found:', {
+                        hasLifeData: !!data.lifeData,
+                        hasLifeElements: !!data.lifeElements,
+                        lastUpdated: data.lastUpdated,
+                        chaptersCount: data.lifeData?.chapters?.length || 0
+                    });
+                    
+                    // Validate data structure before loading
+                    if (data.lifeData && data.lifeData.chapters && Array.isArray(data.lifeData.chapters)) {
+                        lifeData = data.lifeData;
+                        lifeElements = data.lifeElements || [];
+                        
+                        updateTimeline();
+                        updateStatus();
+                        drawMountain();
+                        
+                        console.log('Progress loaded from cloud successfully');
+                        updateSyncStatus('✅ Loaded from cloud');
+                        return true;
+                    } else {
+                        console.warn('Invalid data structure in cloud, using defaults');
+                        updateSyncStatus('⚠️ Invalid cloud data, using defaults');
+                        await saveToCloud(); // Save current defaults to cloud
+                    }
                 } else {
-                    updateSyncStatus('No cloud data found - starting fresh');
+                    console.log('No cloud data found for user, will save current state');
+                    updateSyncStatus('📤 No cloud data - saving current state');
+                    await saveToCloud(); // Save current state as initial data
                 }
             } catch (error) {
                 console.error('Failed to load from cloud:', error);
-                updateSyncStatus('❌ Cloud load failed');
+                console.error('Error details:', {
+                    code: error.code,
+                    message: error.message,
+                    userId: currentUser?.uid
+                });
+                updateSyncStatus('❌ Cloud load failed: ' + error.message);
             }
             return false;
+        }
+
+        // Real-time listener for data changes (optional - for multi-device sync)
+        function setupRealtimeListener() {
+            if (!currentUser || !db) return;
+            
+            const unsubscribe = db.collection('lifeMountainData').doc(currentUser.uid)
+                .onSnapshot((doc) => {
+                    if (doc.exists && !isDraggingChapter && !currentEditingChapter) {
+                        const data = doc.data();
+                        const cloudTimestamp = data.lastUpdated?.toDate?.() || new Date(data.lastUpdated);
+                        const localTimestamp = new Date(localStorage.getItem('lastLocalUpdate') || 0);
+                        
+                        // Only update if cloud data is newer
+                        if (cloudTimestamp > localTimestamp) {
+                            console.log('Real-time update received from cloud');
+                            if (data.lifeData && data.lifeData.chapters) {
+                                lifeData = data.lifeData;
+                                lifeElements = data.lifeElements || [];
+                                updateTimeline();
+                                updateStatus();
+                                drawMountain();
+                                updateSyncStatus('🔄 Updated from cloud');
+                            }
+                        }
+                    }
+                }, (error) => {
+                    console.error('Real-time listener error:', error);
+                });
+            
+            // Store unsubscribe function to clean up later
+            window.realtimeUnsubscribe = unsubscribe;
+        }
+
+        // Test Firestore connection
+        async function testFirestoreConnection() {
+            if (!db) {
+                console.error('Firestore not initialized');
+                return false;
+            }
+            
+            try {
+                // Test write
+                const testRef = db.collection('test').doc('connection');
+                await testRef.set({ 
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    test: 'Connection successful'
+                });
+                
+                // Test read
+                const testDoc = await testRef.get();
+                console.log('Firestore connection test successful:', testDoc.data());
+                
+                // Clean up test document
+                await testRef.delete();
+                
+                return true;
+            } catch (error) {
+                console.error('Firestore connection test failed:', error);
+                return false;
+            }
         }
 
         function saveToLocal() {
@@ -1042,8 +1185,16 @@
         }
 
         async function autoSave() {
+            // Update local timestamp
+            localStorage.setItem('lastLocalUpdate', new Date().toISOString());
+            
             if (currentUser) {
-                await saveToCloud();
+                const success = await saveToCloud();
+                if (!success) {
+                    // Fallback to local storage if cloud save fails
+                    saveToLocal();
+                    updateSyncStatus('⚠️ Saved locally (cloud failed)');
+                }
             } else {
                 saveToLocal();
             }
