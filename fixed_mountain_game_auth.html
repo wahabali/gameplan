@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Mountain Game</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(145deg, #e3e3e3, #f7f7f7);
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #e0e0e0;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 20px 20px 40px #bebebe, -20px -20px 40px #ffffff;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a4a4a;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+        
+        #mountain-canvas {
+            width: 100%;
+            height: 500px;
+            background: #e0e0e0;
+            border-radius: 25px;
+            margin-bottom: 30px;
+            box-shadow: inset 8px 8px 16px #bebebe, inset -8px -8px 16px #ffffff;
+            cursor: pointer;
+        }
+        
+        .timeline-container {
+            background: #e0e0e0;
+            border-radius: 25px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .timeline-title {
+            color: #4a4a4a;
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .zoom-btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #4a4a4a;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+        }
+        
+        .zoom-level {
+            background: #e0e0e0;
+            border-radius: 15px;
+            padding: 8px 16px;
+            margin: 0 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a4a4a;
+            box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+        }
+        
+        .timeline {
+            height: 80px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            position: relative;
+            overflow-x: auto;
+            box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+        }
+        
+        .timeline-content {
+            height: 100%;
+            position: relative;
+            min-width: 100%;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background: #e0e0e0;
+            border: none;
+            color: #4a4a4a;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+        }
+        
+        .btn.primary {
+            background: linear-gradient(145deg, #7f8c8d, #95a5a6);
+            color: #ffffff;
+        }
+        
+        .status-info {
+            background: #e0e0e0;
+            border-radius: 25px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+            text-align: center;
+        }
+        
+        .level-indicator {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4a4a4a;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 15px 0;
+            box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7f8c8d, #95a5a6);
+            border-radius: 6px;
+            transition: width 0.8s ease;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            display: none;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .chapter-editor {
+            background: #e0e0e0;
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 20px 20px 40px #bebebe, -20px -20px 40px #ffffff;
+        }
+        
+        .close-btn {
+            background: #e0e0e0;
+            border: none;
+            color: #4a4a4a;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            float: right;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #4a4a4a;
+            margin-bottom: 10px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            font-size: 14px;
+            background: #e0e0e0;
+            color: #4a4a4a;
+            box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff;
+        }
+        
+        .save-btn {
+            background: linear-gradient(145deg, #7f8c8d, #95a5a6);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏔️ Your Life Mountain Game</h1>
+        
+        <canvas id="mountain-canvas"></canvas>
+        
+        <div class="timeline-container">
+            <div class="timeline-header">
+                <h3 class="timeline-title">Life Timeline</h3>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomOut()">-</button>
+                    <div class="zoom-level" id="zoomLevel">Day</div>
+                    <button class="zoom-btn" onclick="zoomIn()">+</button>
+                </div>
+            </div>
+            <div class="timeline" id="timeline">
+                <div class="timeline-content" id="timeline-content"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div id="auth-section" style="width: 100%; margin-bottom: 20px;">
+                <button class="btn primary" id="login-btn" onclick="signInWithGoogle()" style="display: none;">
+                    🔐 Login with Google to Save to Cloud
+                </button>
+                <div id="user-info" style="display: none; text-align: center; margin-bottom: 15px;">
+                    <img id="user-photo" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
+                    <span id="user-name" style="color: #4a4a4a; font-weight: 600; margin-right: 15px;"></span>
+                    <button class="btn" onclick="signOut()">Logout</button>
+                </div>
+                <div id="sync-status" style="text-align: center; font-size: 12px; color: #666; margin-bottom: 10px;"></div>
+            </div>
+            <button class="btn primary" onclick="addNewChapter()">+ New Chapter</button>
+            <button class="btn" onclick="saveProgress()">💾 Download Backup</button>
+            <button class="btn" onclick="loadProgress()">📂 Load from File</button>
+        </div>
+        
+        <div class="status-info">
+            <div class="level-indicator">Level <span id="current-level">1</span> - <span id="current-chapter">Starting Journey</span></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 10%;"></div>
+            </div>
+            <div id="chapter-details">Click on mountain circles to edit chapters and complete goals!</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="chapterModal">
+        <div class="chapter-editor">
+            <button class="close-btn" onclick="closeChapterEditor()">&times;</button>
+            
+            <div class="form-group">
+                <label class="form-label">Chapter Name</label>
+                <input type="text" class="form-input" id="chapterName" placeholder="Enter chapter name">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Start Date</label>
+                <input type="date" class="form-input" id="startDate">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">End Date</label>
+                <input type="date" class="form-input" id="endDate">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Goal</label>
+                <input type="text" class="form-input" id="goalTitle" placeholder="What do you want to achieve?">
+                <br><br>
+                <label>
+                    <input type="checkbox" id="goalCompleted" onchange="handleGoalChange()"> Mark as completed
+                </label>
+            </div>
+            
+            <button class="save-btn" onclick="saveChapterChanges()">Save Changes</button>
+        </div>
+    </div>
+
+    <script>
+    // Global variables
+    let lifeElements = [];
+    let currentEditingChapter = null;
+    let canvas, ctx;
+    let animationFrame = 0;
+    let auth, db, currentUser = null;
+    
+    const lifeTypes = [
+        { emoji: '💎', name: 'Diamond' },
+        { emoji: '🌴', name: 'Palm Tree' },
+        { emoji: '👸', name: 'Queen' }
+    ];
+    
+    let lifeData = {
+        chapters: [{
+            id: 1,
+            name: "Starting Journey",
+            level: 1,
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            x: 100,
+            y: 400,
+            color: "#667eea",
+            goalTitle: "Set Life Direction",
+            goalCompleted: false
+        }]
+    };
+
+    // Firebase initialization
+    async function initializeFirebase() {
+        try {
+            // Load Firebase scripts directly in HTML head for better reliability
+            await loadFirebaseScripts();
+            
+            // Wait a bit for scripts to fully load
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (!window.firebase) {
+                throw new Error('Firebase not loaded');
+            }
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyBPhg5eD11hfblwG8ZH-Uo6CDPqKxSTOcA",
+                authDomain: "speed00.firebaseapp.com",
+                projectId: "speed00",
+                storageBucket: "speed00.firebasestorage.app",
+                messagingSenderId: "635012567283",
+                appId: "1:635012567283:web:c2cf42afdafcd3d7a1e786"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+
+            // Test Firebase configuration
+            console.log('Firebase config loaded:', {
+                projectId: firebaseConfig.projectId,
+                authDomain: firebaseConfig.authDomain,
+                apiKey: firebaseConfig.apiKey ? 'Present' : 'Missing'
+            });
+
+            auth.onAuthStateChanged((user) => {
+                currentUser = user;
+                updateAuthUI();
+                if (user) {
+                    loadFromCloud();
+                } else {
+                    loadFromLocal();
+                }
+            });
+
+            document.getElementById('login-btn').style.display = 'block';
+            updateSyncStatus('🔥 Firebase ready - click login to sync');
+            
+            // Add a test button for debugging
+            const testBtn = document.createElement('button');
+            testBtn.textContent = '🔍 Test Auth';
+            testBtn.className = 'btn';
+            testBtn.style.fontSize = '12px';
+            testBtn.onclick = testFirebaseAuth;
+            document.getElementById('auth-section').appendChild(testBtn);
+        } catch (error) {
+            console.error('Firebase initialization failed:', error);
+            loadFromLocal();
+            document.getElementById('login-btn').style.display = 'none';
+            updateSyncStatus('⚠️ Cloud sync unavailable - using local storage');
+        }
+    }
+
+    function loadFirebaseScripts() {
+        return new Promise((resolve, reject) => {
+            // Check if already loaded
+            if (window.firebase) {
+                resolve();
+                return;
+            }
+
+            let scriptsLoaded = 0;
+            const totalScripts = 3;
+            
+            function checkComplete() {
+                scriptsLoaded++;
+                if (scriptsLoaded === totalScripts) {
+                    // Give a small delay for all scripts to initialize
+                    setTimeout(resolve, 500);
+                }
+            }
+            
+            // Load Firebase App
+            const script1 = document.createElement('script');
+            script1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+            script1.onload = checkComplete;
+            script1.onerror = () => {
+                console.error('Failed to load Firebase App');
+                reject(new Error('Failed to load Firebase App'));
+            };
+            document.head.appendChild(script1);
+            
+            // Load Firebase Auth
+            const script2 = document.createElement('script');
+            script2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
+            script2.onload = checkComplete;
+            script2.onerror = () => {
+                console.error('Failed to load Firebase Auth');
+                reject(new Error('Failed to load Firebase Auth'));
+            };
+            document.head.appendChild(script2);
+            
+            // Load Firebase Firestore
+            const script3 = document.createElement('script');
+            script3.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
+            script3.onload = checkComplete;
+            script3.onerror = () => {
+                console.error('Failed to load Firebase Firestore');
+                reject(new Error('Failed to load Firebase Firestore'));
+            };
+            document.head.appendChild(script3);
+        });
+    }
+
+    function testFirebaseAuth() {
+        console.log('=== Firebase Auth Test ===');
+        console.log('Firebase available:', !!window.firebase);
+        console.log('Auth initialized:', !!auth);
+        console.log('Current domain:', window.location.hostname);
+        console.log('Current protocol:', window.location.protocol);
+        console.log('Full URL:', window.location.href);
+        
+        if (auth) {
+            console.log('Auth methods available:', Object.keys(firebase.auth));
+            console.log('GoogleAuthProvider available:', !!firebase.auth.GoogleAuthProvider);
+        }
+        
+        alert('Check browser console for Firebase test results');
+    }
+
+    async function signInWithGoogle() {
+        try {
+            updateSyncStatus('🔄 Attempting Google sign-in...');
+            
+            if (!auth) {
+                throw new Error('Firebase Auth not initialized');
+            }
+            
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            // Add additional scopes and settings
+            provider.addScope('email');
+            provider.addScope('profile');
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            });
+            
+            console.log('Starting sign-in process...');
+            const result = await auth.signInWithPopup(provider);
+            
+            console.log('Sign-in successful:', result.user.displayName);
+            updateSyncStatus('✅ Signed in successfully!');
+            
+        } catch (error) {
+            console.error('Detailed sign-in error:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            
+            let errorMessage = 'Sign in failed. ';
+            
+            switch (error.code) {
+                case 'auth/popup-closed-by-user':
+                    errorMessage += 'Popup was closed before sign-in completed.';
+                    break;
+                case 'auth/popup-blocked':
+                    errorMessage += 'Popup was blocked by your browser. Please allow popups.';
+                    break;
+                case 'auth/cancelled-popup-request':
+                    errorMessage += 'Another popup is already open.';
+                    break;
+                case 'auth/unauthorized-domain':
+                    errorMessage += 'This domain is not authorized for OAuth operations.';
+                    break;
+                case 'auth/operation-not-allowed':
+                    errorMessage += 'Google sign-in is not enabled in Firebase Console.';
+                    break;
+                case 'auth/invalid-api-key':
+                    errorMessage += 'Invalid Firebase configuration.';
+                    break;
+                default:
+                    errorMessage += `Error: ${error.message}`;
+            }
+            
+            alert(errorMessage);
+            updateSyncStatus('❌ Sign-in failed');
+        }
+    }
+
+    async function signOut() {
+        try {
+            await auth.signOut();
+            console.log('Signed out successfully');
+            updateSyncStatus('Signed out - data saved locally 💾');
+        } catch (error) {
+            console.error('Sign out failed:', error);
+        }
+    }
+
+    function updateAuthUI() {
+        const loginBtn = document.getElementById('login-btn');
+        const userInfo = document.getElementById('user-info');
+        const userPhoto = document.getElementById('user-photo');
+        const userName = document.getElementById('user-name');
+
+        if (currentUser) {
+            loginBtn.style.display = 'none';
+            userInfo.style.display = 'block';
+            userPhoto.src = currentUser.photoURL || '';
+            userName.textContent = currentUser.displayName || currentUser.email;
+            updateSyncStatus('✅ Synced to cloud');
+        } else {
+            loginBtn.style.display = 'block';
+            userInfo.style.display = 'none';
+            updateSyncStatus('💾 Saved locally');
+        }
+    }
+
+    function updateSyncStatus(message) {
+        const statusEl = document.getElementById('sync-status');
+        if (statusEl) {
+            statusEl.textContent = message;
+            setTimeout(() => {
+                if (statusEl.textContent === message) {
+                    statusEl.textContent = currentUser ? '☁️ Cloud sync active' : '💾 Local storage';
+                }
+            }, 3000);
+        }
+    }
+
+    async function saveToCloud() {
+        if (!currentUser || !db) return false;
+        
+        try {
+            const saveData = {
+                lifeData: lifeData,
+                lifeElements: lifeElements,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            await db.collection('lifeMountainData').doc(currentUser.uid).set(saveData);
+            console.log('Progress saved to cloud successfully');
+            updateSyncStatus('✅ Saved to cloud');
+            return true;
+        } catch (error) {
+            console.error('Failed to save to cloud:', error);
+            updateSyncStatus('❌ Cloud save failed');
+            return false;
+        }
+    }
+
+    async function loadFromCloud() {
+        if (!currentUser || !db) return false;
+        
+        try {
+            const doc = await db.collection('lifeMountainData').doc(currentUser.uid).get();
+            
+            if (doc.exists) {
+                const data = doc.data();
+                lifeData = data.lifeData;
+                lifeElements = data.lifeElements || [];
+                updateStatus();
+                console.log('Progress loaded from cloud successfully');
+                updateSyncStatus('✅ Loaded from cloud');
+                return true;
+            } else {
+                updateSyncStatus('No cloud data found - starting fresh');
+            }
+        } catch (error) {
+            console.error('Failed to load from cloud:', error);
+            updateSyncStatus('❌ Cloud load failed');
+        }
+        return false;
+    }
+
+    function saveToLocal() {
+        try {
+            const saveData = {
+                lifeData: lifeData,
+                lifeElements: lifeElements,
+                lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem('lifeMountainData', JSON.stringify(saveData));
+            console.log('Progress saved locally');
+        } catch (error) {
+            console.error('Failed to save locally:', error);
+        }
+    }
+
+    function loadFromLocal() {
+        try {
+            const savedData = localStorage.getItem('lifeMountainData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                lifeData = data.lifeData || lifeData;
+                lifeElements = data.lifeElements || [];
+                updateStatus();
+                console.log('Progress loaded from local storage');
+                updateSyncStatus('💾 Loaded from local storage');
+            }
+        } catch (error) {
+            console.error('Failed to load from local storage:', error);
+        }
+    }
+
+    async function autoSave() {
+        if (currentUser) {
+            await saveToCloud();
+        } else {
+            saveToLocal();
+        }
+    }
+
+    function init() {
+        canvas = document.getElementById('mountain-canvas');
+        ctx = canvas.getContext('2d');
+        if (!canvas) return;
+        
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        
+        setupEventListeners();
+        animate();
+        updateStatus();
+        
+        // Initialize Firebase
+        initializeFirebase();
+    }
+
+    function setupEventListeners() {
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            lifeData.chapters.forEach(chapter => {
+                const distance = Math.sqrt((x - chapter.x) ** 2 + (y - chapter.y) ** 2);
+                if (distance < 30) {
+                    openChapterEditor(chapter);
+                }
+            });
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            let foundChapter = false;
+            lifeData.chapters.forEach(chapter => {
+                const distance = Math.sqrt((x - chapter.x) ** 2 + (y - chapter.y) ** 2);
+                if (distance < 30) {
+                    foundChapter = true;
+                }
+            });
+            
+            canvas.style.cursor = foundChapter ? 'pointer' : 'default';
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        });
+    }
+
+    function drawMountain() {
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+        
+        // Draw mountain background
+        const gradient = ctx.createLinearGradient(0, height, 0, 0);
+        gradient.addColorStop(0, 'rgba(46, 125, 50, 0.1)');
+        gradient.addColorStop(0.7, 'rgba(76, 175, 80, 0.05)');
+        gradient.addColorStop(1, 'rgba(129, 199, 132, 0.02)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        
+        const peaks = [
+            {x: 0, y: height}, 
+            {x: width * 0.2, y: height * 0.8}, 
+            {x: width * 0.4, y: height * 0.6},
+            {x: width * 0.6, y: height * 0.4}, 
+            {x: width * 0.8, y: height * 0.25}, 
+            {x: width, y: height * 0.2}, 
+            {x: width, y: height}
+        ];
+        
+        peaks.forEach(peak => ctx.lineTo(peak.x, peak.y));
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.strokeStyle = 'rgba(46, 125, 50, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Draw path between chapters
+        if (lifeData.chapters.length > 1) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            
+            lifeData.chapters.forEach((chapter, index) => {
+                if (index === 0) {
+                    ctx.moveTo(chapter.x, chapter.y);
+                } else {
+                    ctx.lineTo(chapter.x, chapter.y);
+                }
+            });
+            ctx.stroke();
+        }
+        
+        // Draw chapters
+        const today = new Date().toISOString().split('T')[0];
+        
+        lifeData.chapters.forEach((chapter, index) => {
+            const isActive = chapter.startDate <= today && chapter.endDate >= today;
+            const isPast = chapter.endDate < today;
+            
+            // Draw chapter circle
+            ctx.beginPath();
+            const radius = isActive ? 25 : 20;
+            ctx.arc(chapter.x, chapter.y, radius, 0, 2 * Math.PI);
+            
+            if (isActive) {
+                const goldGradient = ctx.createRadialGradient(chapter.x, chapter.y, 0, chapter.x, chapter.y, radius);
+                goldGradient.addColorStop(0, '#ffd700');
+                goldGradient.addColorStop(1, '#ffa500');
+                ctx.fillStyle = goldGradient;
+            } else if (isPast) {
+                ctx.fillStyle = chapter.color;
+            } else {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            }
+            
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Draw chapter number
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(chapter.level, chapter.x, chapter.y + 5);
+            
+            // Draw chapter name
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = '12px Arial';
+            ctx.fillText(chapter.name, chapter.x, chapter.y - 35);
+            
+            // Draw goal status
+            if (chapter.goalCompleted) {
+                ctx.fillStyle = '#2ecc71';
+                ctx.font = '10px Arial';
+                ctx.fillText('✓ Goal Complete', chapter.x, chapter.y + 40);
+            }
+        });
+        
+        // Draw life elements
+        lifeElements.forEach(life => {
+            ctx.save();
+            const floatY = life.y + Math.sin(animationFrame * 0.05 + life.bobOffset) * 3;
+            ctx.translate(life.x, floatY);
+            ctx.rotate(life.rotation);
+            ctx.scale(life.scale, life.scale);
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(life.emoji, 0, 0);
+            ctx.restore();
+        });
+        
+        // Draw character on current chapter
+        const currentChapter = getCurrentChapter();
+        if (currentChapter) {
+            const charX = currentChapter.x;
+            const charY = currentChapter.y - 50 + Math.sin(animationFrame * 0.1) * 2;
+            
+            // Character shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(charX, currentChapter.y + 15, 8, 4, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Character body
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(charX, charY, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Character outline
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    function getCurrentChapter() {
+        const today = new Date().toISOString().split('T')[0];
+        return lifeData.chapters.find(chapter => 
+            chapter.startDate <= today && chapter.endDate >= today
+        ) || lifeData.chapters[lifeData.chapters.length - 1];
+    }
+
+    function animate() {
+        animationFrame++;
+        drawMountain();
+        requestAnimationFrame(animate);
+    }
+
+    function openChapterEditor(chapter) {
+        currentEditingChapter = chapter;
+        document.getElementById('chapterName').value = chapter.name;
+        document.getElementById('startDate').value = chapter.startDate;
+        document.getElementById('endDate').value = chapter.endDate;
+        document.getElementById('goalTitle').value = chapter.goalTitle || '';
+        document.getElementById('goalCompleted').checked = chapter.goalCompleted || false;
+        document.getElementById('chapterModal').classList.add('active');
+    }
+
+    function closeChapterEditor() {
+        document.getElementById('chapterModal').classList.remove('active');
+        currentEditingChapter = null;
+    }
+
+    function handleGoalChange() {
+        const goalCompleted = document.getElementById('goalCompleted').checked;
+        const goalTitle = document.getElementById('goalTitle').value;
+        
+        if (goalCompleted && goalTitle && currentEditingChapter) {
+            // Add life element if goal just completed
+            if (!currentEditingChapter.goalCompleted) {
+                addLifeElement(goalTitle, currentEditingChapter.name);
+            }
+        } else if (!goalCompleted && currentEditingChapter) {
+            // Remove life element if goal uncompleted
+            if (currentEditingChapter.goalCompleted) {
+                removeLifeElement(currentEditingChapter.goalTitle, currentEditingChapter.name);
+            }
+        }
+    }
+
+    function addLifeElement(goalTitle, chapterName) {
+        const chapter = lifeData.chapters.find(c => c.name === chapterName);
+        if (!chapter) return;
+        
+        const lifeType = lifeTypes[lifeElements.length % lifeTypes.length];
+        const offsetX = (Math.random() - 0.5) * 100;
+        const offsetY = (Math.random() - 0.5) * 50;
+        
+        const newLife = {
+            id: Date.now() + Math.random(),
+            emoji: lifeType.emoji,
+            name: lifeType.name,
+            goalTitle: goalTitle,
+            chapterName: chapterName,
+            x: Math.max(30, Math.min(canvas.width - 30, chapter.x + offsetX)),
+            y: Math.max(50, Math.min(canvas.height - 50, chapter.y + offsetY)),
+            scale: 0.8 + Math.random() * 0.4,
+            rotation: Math.random() * 0.4 - 0.2,
+            bobOffset: Math.random() * Math.PI * 2
+        };
+        
+        lifeElements.push(newLife);
+        autoSave();
+    }
+
+    function removeLifeElement(goalTitle, chapterName) {
+        lifeElements = lifeElements.filter(life => 
+            !(life.goalTitle === goalTitle && life.chapterName === chapterName)
+        );
+        autoSave();
+    }
+
+    function saveChapterChanges() {
+        if (!currentEditingChapter) return;
+        
+        const wasCompleted = currentEditingChapter.goalCompleted;
+        
+        currentEditingChapter.name = document.getElementById('chapterName').value;
+        currentEditingChapter.startDate = document.getElementById('startDate').value;
+        currentEditingChapter.endDate = document.getElementById('endDate').value;
+        currentEditingChapter.goalTitle = document.getElementById('goalTitle').value;
+        currentEditingChapter.goalCompleted = document.getElementById('goalCompleted').checked;
+        
+        // Handle life element changes
+        if (currentEditingChapter.goalCompleted && !wasCompleted && currentEditingChapter.goalTitle) {
+            addLifeElement(currentEditingChapter.goalTitle, currentEditingChapter.name);
+        } else if (!currentEditingChapter.goalCompleted && wasCompleted) {
+            removeLifeElement(currentEditingChapter.goalTitle, currentEditingChapter.name);
+        }
+        
+        closeChapterEditor();
+        updateStatus();
+        autoSave();
+    }
+
+    function addNewChapter() {
+        const today = new Date();
+        const nextMonth = new Date(today);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        
+        const lastChapter = lifeData.chapters[lifeData.chapters.length - 1];
+        const newChapter = {
+            id: Date.now(),
+            name: "New Chapter",
+            level: lifeData.chapters.length + 1,
+            startDate: today.toISOString().split('T')[0],
+            endDate: nextMonth.toISOString().split('T')[0],
+            x: Math.min(lastChapter.x + 120, canvas.width - 50),
+            y: Math.max(lastChapter.y - 50, 100),
+            color: getChapterColor(lifeData.chapters.length),
+            goalTitle: "New Goal",
+            goalCompleted: false
+        };
+        
+        lifeData.chapters.push(newChapter);
+        updateStatus();
+        autoSave();
+        openChapterEditor(newChapter);
+    }
+
+    function getChapterColor(index) {
+        const colors = ['#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#e74c3c', '#1abc9c'];
+        return colors[index % colors.length];
+    }
+
+    function updateStatus() {
+        const currentChapter = getCurrentChapter();
+        const completedGoals = lifeData.chapters.filter(c => c.goalCompleted).length;
+        const totalGoals = lifeData.chapters.length;
+        const progress = totalGoals > 0 ? completedGoals / totalGoals : 0;
+        
+        document.getElementById('current-level').textContent = currentChapter ? currentChapter.level : 1;
+        document.getElementById('current-chapter').textContent = currentChapter ? currentChapter.name : 'Starting Journey';
+        document.getElementById('progress-fill').style.width = (progress * 100) + '%';
+        document.getElementById('chapter-details').textContent = 
+            `Goals completed: ${completedGoals}/${totalGoals} • Life objects: ${lifeElements.length}`;
+    }
+
+    function autoSave() {
+        try {
+            const saveData = {
+                lifeData: lifeData,
+                lifeElements: lifeElements,
+                lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem('lifeMountainData', JSON.stringify(saveData));
+        } catch (error) {
+            console.error('Auto-save failed:', error);
+        }
+    }
+
+    function saveProgress() {
+        const dataStr = JSON.stringify({ lifeData: lifeData, lifeElements: lifeElements }, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'life-mountain-progress.json';
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function loadProgress() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        lifeData = data.lifeData;
+                        lifeElements = data.lifeElements || [];
+                        updateStatus();
+                        autoSave();
+                        alert('Progress loaded successfully!');
+                    } catch (error) {
+                        alert('Invalid file format!');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
+
+    function zoomIn() {
+        // Timeline zoom functionality can be added later
+        console.log('Zoom in');
+    }
+
+    function zoomOut() {
+        // Timeline zoom functionality can be added later
+        console.log('Zoom out');
+    }
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
